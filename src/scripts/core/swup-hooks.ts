@@ -106,6 +106,10 @@ export class SwupHooksManager {
 		window.swup!.hooks.on("content:replace", () => {
 			this.clearCache();
 
+			// Re-sync theme as early as possible so the swapped-in content
+			// never paints against the wrong html.dark state.
+			this.syncThemeState();
+
 			// 初始化新页面的图片、公式、滚动条和 TOC
 			this.handlers.initFancybox?.();
 			this.handlers.checkKatex?.();
@@ -407,25 +411,22 @@ export class SwupHooksManager {
 		const hasDarkClass =
 			document.documentElement.classList.contains("dark");
 
-		// 如果主题不匹配，使用批量更新减少重绘
+		// Apply synchronously so the browser never paints the swapped-in
+		// content against a stale html.dark state.
 		if (currentTheme !== expectedTheme || hasDarkClass !== isDark) {
-			requestAnimationFrame(() => {
-				// 同步 data-theme 属性
-				if (currentTheme !== expectedTheme) {
-					document.documentElement.setAttribute(
-						"data-theme",
-						expectedTheme,
-					);
+			if (currentTheme !== expectedTheme) {
+				document.documentElement.setAttribute(
+					"data-theme",
+					expectedTheme,
+				);
+			}
+			if (hasDarkClass !== isDark) {
+				if (isDark) {
+					document.documentElement.classList.add("dark");
+				} else {
+					document.documentElement.classList.remove("dark");
 				}
-				// 同步 dark class
-				if (hasDarkClass !== isDark) {
-					if (isDark) {
-						document.documentElement.classList.add("dark");
-					} else {
-						document.documentElement.classList.remove("dark");
-					}
-				}
-			});
+			}
 		}
 	}
 

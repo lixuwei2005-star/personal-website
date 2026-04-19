@@ -22,6 +22,8 @@ export const profileOverrideConfig: Partial<ProfileConfig> = {
 \tbio: ${JSON.stringify(profile.bio || "")},
 \tlinks: ${links},
 };
+
+export const profileFooterName = ${JSON.stringify(profile.footer_name || "")};
 `;
 
 	mkdirSync(path.dirname(GENERATED_PROFILE_PATH), { recursive: true });
@@ -32,7 +34,7 @@ function writeEmptyOverrideFile() {
 	mkdirSync(path.dirname(GENERATED_PROFILE_PATH), { recursive: true });
 	writeFileSync(
 		GENERATED_PROFILE_PATH,
-		'import type { ProfileConfig } from "../types/config";\n\nexport const profileOverrideConfig: Partial<ProfileConfig> = {};\n',
+		'import type { ProfileConfig } from "../types/config";\n\nexport const profileOverrideConfig: Partial<ProfileConfig> = {};\n\nexport const profileFooterName = "";\n',
 		"utf-8",
 	);
 }
@@ -56,7 +58,7 @@ if (!profileTable) {
 }
 
 const row = db
-	.prepare("SELECT name, bio, avatar_path, links FROM profile WHERE id = 1")
+	.prepare("SELECT name, bio, avatar_path, footer_name, links FROM profile WHERE id = 1")
 	.get();
 
 db.close();

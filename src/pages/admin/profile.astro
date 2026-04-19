@@ -1,0 +1,27 @@
+---
+export const prerender = false;
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import ProfileEditor from "../../components/admin/ProfileEditor.svelte";
+import { readSpecMarkdown } from "../../lib/content-sync/spec";
+import { getProfile } from "../../lib/repositories/profile";
+import { getSiteSettings } from "../../lib/repositories/site-settings";
+
+const profile = getProfile();
+const siteSettings = getSiteSettings();
+let aboutContent = "";
+
+try {
+	aboutContent = readSpecMarkdown("about");
+} catch (error) {
+	console.error("Failed to load about page content for admin editor:", error);
+}
+---
+
+<AdminLayout title="Edit Profile">
+	<ProfileEditor
+		client:load
+		profile={profile}
+		showLastModified={siteSettings.showLastModified}
+		aboutContent={aboutContent}
+	/>
+</AdminLayout>

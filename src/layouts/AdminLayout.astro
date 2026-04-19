@@ -1,0 +1,303 @@
+---
+export const prerender = false;
+
+import { Icon } from "astro-icon/components";
+import {
+	defaultAdminLanguage,
+	translateAdminKey,
+	translateAdminLiteral,
+} from "../lib/admin/i18n";
+
+interface Props {
+	title: string;
+	titleKey?: string;
+	titleParams?: Record<string, string | number>;
+}
+
+const { title, titleKey, titleParams } = Astro.props;
+
+const navItems = [
+	{ href: "/admin/", label: "Dashboard", icon: "material-symbols:dashboard-outline-rounded" },
+	{ href: "/admin/announcements/", label: "Announcements", icon: "material-symbols:campaign-outline-rounded" },
+	{ href: "/admin/profile/", label: "Profile", icon: "material-symbols:person-outline-rounded" },
+	{ href: "/admin/posts/", label: "Posts", icon: "material-symbols:article-outline-rounded" },
+	{ href: "/admin/projects/", label: "Projects", icon: "material-symbols:code-rounded" },
+	{ href: "/admin/friends/", label: "Friends", icon: "material-symbols:group-outline-rounded" },
+	{ href: "/admin/tools/", label: "Tools", icon: "material-symbols:handyman" },
+	{ href: "/admin/footprints/", label: "Footprints", icon: "material-symbols:public" },
+	{ href: "/admin/skills/", label: "Skills", icon: "material-symbols:psychology-alt-outline-rounded" },
+	{ href: "/admin/timeline/", label: "Timeline", icon: "material-symbols:view-timeline-outline-rounded" },
+	{ href: "/admin/diary/", label: "Diary", icon: "material-symbols:menu-book-outline-rounded" },
+	{ href: "/admin/albums/", label: "Albums", icon: "material-symbols:photo-library-outline-rounded" },
+	{ href: "/admin/anime/", label: "Anime", icon: "material-symbols:live-tv-outline-rounded" },
+	{ href: "/admin/devices/", label: "Devices", icon: "material-symbols:devices-outline-rounded" },
+	{ href: "/admin/settings/", label: "Settings", icon: "material-symbols:settings-outline-rounded" },
+	{ href: "/admin/security/", label: "Security", icon: "material-symbols:shield-lock-outline-rounded" },
+];
+
+const currentPath = Astro.url.pathname;
+
+function normalizePath(pathname: string): string {
+	return pathname.endsWith("/") ? pathname : `${pathname}/`;
+}
+
+function isActiveNavItem(itemHref: string, pathname: string): boolean {
+	const normalizedPath = normalizePath(pathname);
+	const normalizedHref = normalizePath(itemHref);
+	if (normalizedHref === "/admin/") {
+		return normalizedPath === normalizedHref;
+	}
+	return normalizedPath.startsWith(normalizedHref);
+}
+
+const resolvedTitle = titleKey
+	? translateAdminKey(defaultAdminLanguage, titleKey, titleParams)
+	: translateAdminLiteral(defaultAdminLanguage, title);
+const resolvedDocumentTitle = translateAdminKey(defaultAdminLanguage, "layout.documentTitle", {
+	title: resolvedTitle,
+});
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title
+			data-admin-i18n-key="layout.documentTitle"
+			data-admin-i18n-params={JSON.stringify({ title: resolvedTitle })}
+		>{resolvedDocumentTitle}</title>
+		<style>
+			*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+			.admin-body { min-height: 100vh; display: flex; background: #f3f4f6; color: #111827; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+			.sidebar { position: fixed; inset: 0 auto 0 0; width: 240px; background: #1a1a2e; color: #fff; display: flex; flex-direction: column; }
+			.sidebar-header { padding: 24px 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+			.sidebar-header h1 { font-size: 20px; font-weight: 700; }
+			.sidebar-header p { margin-top: 6px; font-size: 13px; color: rgba(255,255,255,0.6); }
+			.sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+			.sidebar-nav a { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: rgba(255,255,255,0.72); text-decoration: none; font-size: 15px; transition: background 0.2s ease, color 0.2s ease; }
+			.sidebar-nav a:hover { background: rgba(255,255,255,0.06); color: #fff; }
+			.sidebar-nav a.active { background: rgba(99,102,241,0.22); color: #818cf8; border-right: 3px solid #818cf8; }
+			.sidebar-nav .icon { width: 20px; height: 20px; flex-shrink: 0; }
+			.sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.08); }
+			.sidebar-footer button,
+			.sidebar-footer a { width: 100%; display: block; border: 0; border-radius: 10px; padding: 10px 12px; text-align: center; font-size: 13px; text-decoration: none; cursor: pointer; }
+			.sidebar-footer button { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.86); }
+			.sidebar-footer button:hover { background: rgba(255,255,255,0.14); }
+			.sidebar-footer a { margin-top: 8px; color: rgba(255,255,255,0.64); }
+			.sidebar-footer a:hover { color: #fff; background: rgba(255,255,255,0.04); }
+			.main { margin-left: 240px; min-width: 0; flex: 1; min-height: 100vh; }
+			.topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 24px; background: #fff; border-bottom: 1px solid #e5e7eb; }
+			.topbar h2 { font-size: 20px; font-weight: 700; color: #111827; }
+			.topbar-actions { display: flex; align-items: center; gap: 8px; }
+			.lang-switch-label { font-size: 13px; color: #6b7280; }
+			.lang-switch-select { border: 1px solid #d1d5db; border-radius: 10px; padding: 7px 10px; font-size: 13px; background: #fff; color: #111827; }
+			.content { padding: 24px; min-width: 0; }
+			.content > * { min-width: 0; max-width: 100%; }
+			.admin-body input, .admin-body textarea, .admin-body select { box-sizing: border-box; max-width: 100%; min-width: 0; }
+			@media (max-width: 900px) {
+				.sidebar { width: 72px; }
+				.sidebar-header p,
+				.sidebar-header h1,
+				.sidebar-nav a span,
+				.sidebar-footer a,
+				.sidebar-footer button span { display: none; }
+				.sidebar-nav a { justify-content: center; padding-inline: 0; }
+				.sidebar-footer { padding-inline: 10px; }
+				.main { margin-left: 72px; }
+			}
+		</style>
+	</head>
+	<body class="admin-body">
+		<aside class="sidebar" id="admin-sidebar">
+			<div class="sidebar-header">
+				<h1 data-admin-i18n-key="brand.admin">{translateAdminKey(defaultAdminLanguage, "brand.admin")}</h1>
+				<p data-admin-i18n-literal="Content Management">{translateAdminLiteral(defaultAdminLanguage, "Content Management")}</p>
+			</div>
+			<nav class="sidebar-nav" id="admin-sidebar-nav">
+				{navItems.map((item) => (
+					<a
+						href={item.href}
+						data-admin-full-reload
+						data-admin-nav-link
+						class={isActiveNavItem(item.href, currentPath) ? "active" : ""}
+						aria-current={isActiveNavItem(item.href, currentPath) ? "page" : undefined}
+					>
+						<Icon name={item.icon} class="icon" />
+						<span data-admin-i18n-literal={item.label}>{translateAdminLiteral(defaultAdminLanguage, item.label)}</span>
+					</a>
+				))}
+			</nav>
+			<div class="sidebar-footer">
+				<button id="logout-btn" type="button">
+					<span data-admin-i18n-literal="Logout">{translateAdminLiteral(defaultAdminLanguage, "Logout")}</span>
+				</button>
+				<a href="/" data-admin-full-reload>
+					<span data-admin-i18n-literal="View Site">{translateAdminLiteral(defaultAdminLanguage, "View Site")}</span>
+				</a>
+			</div>
+		</aside>
+		<main class="main">
+			<div class="topbar">
+				<h2
+					data-admin-page-title
+					data-admin-i18n-key={titleKey}
+					data-admin-i18n-literal={titleKey ? undefined : title}
+					data-admin-i18n-params={titleParams ? JSON.stringify(titleParams) : undefined}
+				>{resolvedTitle}</h2>
+				<div class="topbar-actions">
+					<label
+						for="admin-language-select"
+						class="lang-switch-label"
+						data-admin-i18n-literal="Language"
+					>{translateAdminLiteral(defaultAdminLanguage, "Language")}</label>
+					<select id="admin-language-select" class="lang-switch-select" aria-label="Admin language switch">
+						<option value="zh-CN">&#20013;&#25991;</option>
+						<option value="en">English</option>
+					</select>
+				</div>
+			</div>
+			<div class="content">
+				<slot />
+			</div>
+		</main>
+
+		<script>
+			import {
+				applyAdminTranslations,
+				getAdminLanguage,
+				onAdminLanguageChange,
+				setAdminLanguage,
+				translateAdminKey,
+			} from "../lib/admin/i18n";
+
+			const ADMIN_SIDEBAR_SCROLL_KEY = "adminSidebarScrollTop";
+
+			function normalizePath(pathname: string) {
+				return pathname.endsWith("/") ? pathname : `${pathname}/`;
+			}
+
+			function syncAdminLanguage(lang = getAdminLanguage()) {
+				document.documentElement.lang = lang;
+
+				const languageSelect = document.getElementById("admin-language-select");
+				if (languageSelect instanceof HTMLSelectElement && languageSelect.value !== lang) {
+					languageSelect.value = lang;
+				}
+
+				applyAdminTranslations(document, lang);
+
+				const pageTitle = document.querySelector("[data-admin-page-title]");
+				const currentTitle = pageTitle?.textContent?.trim() || "";
+				document.title = translateAdminKey(lang, "layout.documentTitle", { title: currentTitle });
+
+				const currentPath = normalizePath(window.location.pathname);
+				document.querySelectorAll("[data-admin-nav-link]").forEach((link) => {
+					if (!(link instanceof HTMLAnchorElement)) {
+						return;
+					}
+
+					const href = normalizePath(new URL(link.href, window.location.origin).pathname);
+					const active = href === "/admin/" ? currentPath === href : currentPath.startsWith(href);
+					link.classList.toggle("active", active);
+					if (active) {
+						link.setAttribute("aria-current", "page");
+					} else {
+						link.removeAttribute("aria-current");
+					}
+				});
+			}
+
+			function saveSidebarScrollPosition() {
+				const sidebarNav = document.getElementById("admin-sidebar-nav");
+				if (!(sidebarNav instanceof HTMLElement)) {
+					return;
+				}
+
+				sessionStorage.setItem(ADMIN_SIDEBAR_SCROLL_KEY, String(sidebarNav.scrollTop));
+			}
+
+			function restoreSidebarScrollPosition() {
+				const sidebarNav = document.getElementById("admin-sidebar-nav");
+				if (!(sidebarNav instanceof HTMLElement)) {
+					return;
+				}
+
+				const storedValue = sessionStorage.getItem(ADMIN_SIDEBAR_SCROLL_KEY);
+				if (storedValue === null) {
+					return;
+				}
+
+				const scrollTop = Number.parseInt(storedValue, 10);
+				if (Number.isNaN(scrollTop)) {
+					return;
+				}
+
+				sidebarNav.scrollTop = scrollTop;
+			}
+
+			const languageSelect = document.getElementById("admin-language-select");
+			if (languageSelect instanceof HTMLSelectElement) {
+				languageSelect.value = getAdminLanguage();
+				languageSelect.addEventListener("change", () => {
+					setAdminLanguage(languageSelect.value === "en" ? "en" : "zh-CN");
+				});
+			}
+
+			document.querySelectorAll("[data-admin-full-reload]").forEach((link) => {
+				link.addEventListener("click", (event: MouseEvent) => {
+					const target = event.currentTarget;
+					if (!(target instanceof HTMLAnchorElement)) {
+						return;
+					}
+
+					if (
+						event.defaultPrevented ||
+						event.button !== 0 ||
+						event.metaKey ||
+						event.ctrlKey ||
+						event.shiftKey ||
+						event.altKey ||
+						target.target === "_blank"
+					) {
+						return;
+					}
+
+					saveSidebarScrollPosition();
+					event.preventDefault();
+					window.location.href = target.href;
+				});
+			});
+
+			const sidebarNav = document.getElementById("admin-sidebar-nav");
+			if (sidebarNav instanceof HTMLElement) {
+				sidebarNav.addEventListener("scroll", saveSidebarScrollPosition, {
+					passive: true,
+				});
+			}
+
+			const logoutButton = document.getElementById("logout-btn");
+			if (logoutButton instanceof HTMLButtonElement) {
+				logoutButton.addEventListener("click", async () => {
+					try {
+						await fetch("/api/admin/auth/logout/", { method: "POST" });
+					} catch {
+						// Ignore logout request errors and still redirect to login.
+					}
+
+					window.location.href = "/admin/login/";
+				});
+			}
+
+			restoreSidebarScrollPosition();
+			window.addEventListener("pagehide", saveSidebarScrollPosition);
+			window.addEventListener("beforeunload", saveSidebarScrollPosition);
+			syncAdminLanguage();
+			onAdminLanguageChange((lang) => syncAdminLanguage(lang));
+			window.addEventListener("popstate", () => {
+				syncAdminLanguage(getAdminLanguage());
+				restoreSidebarScrollPosition();
+			});
+		</script>
+	</body>
+</html>

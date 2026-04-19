@@ -1,0 +1,15 @@
+---
+export const prerender = false;
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import SkillEditor from "../../components/admin/SkillEditor.svelte";
+import { getAllSkills } from "../../lib/repositories/skills";
+
+const skills = getAllSkills();
+---
+
+<AdminLayout title="Skills">
+	<SkillEditor
+		client:load
+		items={skills}
+	/>
+</AdminLayout>

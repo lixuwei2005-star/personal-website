@@ -1,0 +1,30 @@
+---
+export const prerender = false;
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import DataTable from "../../components/admin/DataTable.svelte";
+import { getAllTools } from "../../lib/repositories/tools";
+
+const tools = getAllTools();
+---
+
+<AdminLayout title="Tools">
+	<DataTable
+		client:load
+		apiBase="/api/admin/tools"
+		items={tools}
+		columns={[
+			{ key: "title", label: "Name" },
+			{ key: "imgurl", label: "Avatar", type: "image" },
+			{ key: "desc", label: "Description" },
+			{ key: "siteurl", label: "URL" },
+			{ key: "tags", label: "Tags", type: "tags" },
+		]}
+		editFields={[
+			{ key: "title", label: "Name" },
+			{ key: "imgurl", label: "Avatar URL", type: "image" },
+			{ key: "desc", label: "Description" },
+			{ key: "siteurl", label: "Site URL" },
+			{ key: "tags", label: "Tags", type: "tags" },
+		]}
+	/>
+</AdminLayout>

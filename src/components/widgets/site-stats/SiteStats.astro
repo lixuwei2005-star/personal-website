@@ -1,0 +1,275 @@
+---
+import { Icon } from "astro-icon/components";
+
+import { siteConfig } from "../../../config";
+import I18nKey from "../../../i18n/i18nKey";
+import { i18n } from "../../../i18n/translation";
+import {
+	getCategoryList,
+	getSortedPosts,
+	getTagList,
+} from "../../../utils/content-utils";
+import WidgetLayout from "../common/WidgetLayout.astro";
+
+interface Props {
+	class?: string;
+	style?: string;
+}
+
+const { class: className, style } = Astro.props;
+
+// 从配置中获取站点开始日期
+const siteStartDate = siteConfig.siteStartDate || "2025-01-01";
+const hoursAgoSuffix = i18n(I18nKey.siteStatsHoursAgo)
+	.replace("{hours}", "")
+	.trim();
+const daysAgoSuffix = i18n(I18nKey.siteStatsDaysAgo)
+	.replace("{days}", "")
+	.trim();
+
+// 获取所有文章
+const posts = await getSortedPosts();
+const categories = await getCategoryList();
+const tags = await getTagList();
+
+// 计算总字数
+let totalWords = 0;
+for (const post of posts) {
+	if (post.body) {
+		let text = post.body;
+
+		// 移除代码块
+		text = text.replace(/```[\s\S]*?```/g, "");
+		// 移除 ` 包裹的行内代码
+		text = text.replace(/`[^`]+`/g, "");
+
+		// 使用与 remark-content.mjs 完全一致的 CJK 正则
+		const cjkPattern =
+			/[\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af\u3000-\u303f\uff00-\uffef]/g;
+
+		const cjkMatches = text.match(cjkPattern);
+		const cjkCount = cjkMatches ? cjkMatches.length : 0;
+
+		// 计算非 CJK 单词数
+		const nonCjkText = text.replace(cjkPattern, " ");
+
+		// 按空白字符分割，计算单词数量
+		const nonCjkWords = nonCjkText
+			.split(/\s+/)
+			.filter((word) => word.trim().length > 0);
+
+		totalWords += cjkCount + nonCjkWords.length;
+	}
+}
+
+// 格式化数字（添加千位分隔符）
+function formatNumber(num: number): string {
+	return num.toLocaleString();
+}
+
+const stats = [
+	{
+		i18nKey: I18nKey.siteStatsPostCount,
+		icon: "material-symbols:article-outline",
+		label: i18n(I18nKey.siteStatsPostCount),
+		value: posts.length,
+	},
+	{
+		i18nKey: I18nKey.siteStatsCategoryCount,
+		icon: "material-symbols:folder-outline",
+		label: i18n(I18nKey.siteStatsCategoryCount),
+		value: categories.length,
+	},
+	{
+		i18nKey: I18nKey.siteStatsTagCount,
+		icon: "material-symbols:label-outline",
+		label: i18n(I18nKey.siteStatsTagCount),
+		value: tags.length,
+	},
+	{
+		i18nKey: I18nKey.siteStatsTotalWords,
+		icon: "material-symbols:text-ad-outline-rounded",
+		label: i18n(I18nKey.siteStatsTotalWords),
+		value: totalWords,
+		formatted: true,
+	},
+	{
+		i18nKey: I18nKey.siteStatsRunningDays,
+		icon: "material-symbols:calendar-clock-outline",
+		label: i18n(I18nKey.siteStatsRunningDays),
+		value: 0, // 将由客户端更新
+		suffix: i18n(I18nKey.siteStatsDays).replace("{days}", ""),
+		dynamic: true,
+		id: "running-days",
+	},
+	{
+		i18nKey: I18nKey.siteStatsLastUpdate,
+		icon: "material-symbols:ecg-heart-outline",
+		label: i18n(I18nKey.siteStatsLastUpdate),
+		value: "-",
+		suffix: "",
+		dynamic: true,
+		id: "last-update",
+	},
+];
+---
+
+<WidgetLayout
+	name={i18n(I18nKey.siteStats)}
+	titleKey={I18nKey.siteStats}
+	id="site-stats"
+	class={className}
+	style={style}
+>
+	<div class="flex flex-col gap-1">
+		{
+			stats.map((stat) => (
+				<div class="flex items-center justify-between px-2 py-2">
+					<div class="flex items-center gap-2.5 flex-1 min-w-0">
+						<div class="text-[var(--primary)] text-xl shrink-0">
+							<Icon name={stat.icon} />
+						</div>
+						<span
+							class="text-neutral-700 dark:text-neutral-300 font-medium text-sm break-words leading-tight"
+							data-i18n-key={stat.i18nKey}
+						>
+							{stat.label}
+						</span>
+					</div>
+					<div class="flex items-center ml-3 shrink-0">
+						<span
+							class="text-base font-bold text-neutral-900 dark:text-neutral-100"
+							data-stat-id={stat.id}
+						>
+							{stat.formatted
+								? formatNumber(stat.value)
+								: stat.value}
+						</span>
+						{stat.suffix && (
+							<span
+								class="text-sm text-neutral-500 dark:text-neutral-400 ml-1"
+								data-stat-suffix={stat.id}
+							>
+								{stat.suffix}
+							</span>
+						)}
+						{!stat.suffix && stat.id && (
+							<span
+								class="text-sm text-neutral-500 dark:text-neutral-400 ml-1"
+								data-stat-suffix={stat.id}
+							/>
+						)}
+					</div>
+				</div>
+			))
+		}
+	</div>
+</WidgetLayout>
+
+<script
+	is:inline
+	define:vars={{ siteStartDate, hoursAgoSuffix, daysAgoSuffix }}
+>
+	function translateStatText(key, fallback) {
+		if (window.__mizukiI18n?.translate) {
+			return window.__mizukiI18n.translate(key);
+		}
+		return fallback;
+	}
+
+	function getHoursAgoText() {
+		return translateStatText("siteStatsHoursAgo", `{hours} ${hoursAgoSuffix}`);
+	}
+
+	function getDaysAgoText() {
+		return translateStatText("siteStatsDaysAgo", `{days} ${daysAgoSuffix}`);
+	}
+
+	function updateDynamicStats() {
+		const today = new Date();
+
+		// 更新运行天数
+		const startDate = new Date(siteStartDate);
+		const diffTime = Math.abs(today.getTime() - startDate.getTime());
+		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+		const runningDaysElements = document.querySelectorAll(
+			'[data-stat-id="running-days"]',
+		);
+		if (runningDaysElements.length > 0) {
+			runningDaysElements.forEach((element) => {
+				element.textContent = diffDays.toString();
+			});
+		}
+
+		updateLastActivityStat();
+	}
+
+	function setLastActivityDisplay(value, suffix = "") {
+		const lastUpdateElements = document.querySelectorAll(
+			'[data-stat-id="last-update"]',
+		);
+		lastUpdateElements.forEach((element) => {
+			element.textContent = value;
+		});
+
+		const suffixElements = document.querySelectorAll(
+			'[data-stat-suffix="last-update"]',
+		);
+		suffixElements.forEach((element) => {
+			element.textContent = suffix;
+		});
+	}
+
+	async function updateLastActivityStat() {
+		try {
+			const response = await fetch("/api/site-stats.json", {
+				cache: "no-store",
+			});
+			if (!response.ok) {
+				return;
+			}
+
+			const data = await response.json();
+			const lastAdminLoginAt = data?.lastAdminLoginAt;
+			if (!lastAdminLoginAt) {
+				setLastActivityDisplay("-");
+				return;
+			}
+
+			const lastActiveAt = new Date(lastAdminLoginAt);
+			if (Number.isNaN(lastActiveAt.getTime())) {
+				setLastActivityDisplay("-");
+				return;
+			}
+
+			const diffMs = Math.max(0, Date.now() - lastActiveAt.getTime());
+			const hourMs = 1000 * 60 * 60;
+			const dayMs = hourMs * 24;
+
+			if (diffMs < dayMs * 3) {
+				const hours = Math.max(1, Math.floor(diffMs / hourMs));
+				setLastActivityDisplay(
+					hours.toString(),
+					getHoursAgoText().replace("{hours}", "").trim(),
+				);
+				return;
+			}
+
+			const days = Math.floor(diffMs / dayMs);
+			setLastActivityDisplay(
+				days.toString(),
+				getDaysAgoText().replace("{days}", "").trim(),
+			);
+		} catch {
+			// Keep the previous display when fetching live stats fails.
+		}
+	}
+
+	// 页面加载时更新
+	updateDynamicStats();
+
+	// 每小时更新时间显示，登录时间则定期向服务端重新获取一次。
+	setInterval(updateDynamicStats, 60 * 60 * 1000);
+	setInterval(updateLastActivityStat, 5 * 60 * 1000);
+</script>

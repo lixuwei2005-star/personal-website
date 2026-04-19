@@ -1,0 +1,65 @@
+---
+export const prerender = false;
+
+import Pagination from "@components/control/Pagination.astro";
+import CategoryBar from "@components/features/posts/CategoryBar.astro";
+import PostPage from "@components/features/posts/PostPage.astro";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import type { Page } from "astro";
+
+import { siteConfig } from "../config";
+import { PAGE_SIZE } from "../constants/constants";
+import { getSortedPosts } from "../utils/content-utils";
+import { initPostIdMap } from "../utils/permalink-utils";
+
+const showCategoryBar = siteConfig.postListLayout.categoryBar?.enable ?? false;
+const pageParam = Astro.params.page?.trim();
+
+if (pageParam && !/^\d+$/.test(pageParam)) {
+	return Astro.redirect("/404.html");
+}
+
+const currentPage = Number(pageParam || "1");
+const allBlogPosts = await getSortedPosts();
+initPostIdMap(allBlogPosts);
+
+const totalPosts = allBlogPosts.length;
+const lastPage = Math.max(1, Math.ceil(totalPosts / PAGE_SIZE));
+
+if (currentPage < 1 || currentPage > lastPage) {
+	return Astro.redirect("/404.html");
+}
+
+const start = (currentPage - 1) * PAGE_SIZE;
+const end = start + PAGE_SIZE;
+
+const getPageUrl = (pageNumber: number) =>
+	pageNumber <= 1 ? "/" : `/${pageNumber}/`;
+
+const page = {
+	data: allBlogPosts.slice(start, end),
+	start,
+	end: Math.min(end, totalPosts),
+	size: PAGE_SIZE,
+	total: totalPosts,
+	currentPage,
+	lastPage,
+	url: {
+		current: getPageUrl(currentPage),
+		prev: currentPage > 1 ? getPageUrl(currentPage - 1) : undefined,
+		next: currentPage < lastPage ? getPageUrl(currentPage + 1) : undefined,
+	},
+} as Page<(typeof allBlogPosts)[number]>;
+
+const len = page.data.length;
+---
+
+<MainGridLayout>
+	{showCategoryBar && <CategoryBar />}
+	<PostPage page={page} />
+	<Pagination
+		class="mx-auto onload-animation"
+		page={page}
+		style={`animation-delay: calc(var(--content-delay) + ${len * 50}ms)`}
+	/>
+</MainGridLayout>

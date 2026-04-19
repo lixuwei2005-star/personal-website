@@ -1,0 +1,37 @@
+---
+export const prerender = false;
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import DataTable from "../../components/admin/DataTable.svelte";
+import { getAllAnime } from "../../lib/repositories/anime";
+
+const anime = getAllAnime();
+---
+
+<AdminLayout title="Anime">
+	<DataTable
+		client:load
+		apiBase="/api/admin/anime"
+		items={anime}
+		columns={[
+			{ key: "title", label: "Title" },
+			{ key: "status", label: "Status" },
+			{ key: "rating", label: "Rating" },
+			{ key: "year", label: "Year" },
+			{ key: "genre", label: "Genre", type: "tags" },
+		]}
+		editFields={[
+			{ key: "title", label: "Title" },
+			{ key: "status", label: "Status", type: "select", options: ["watching", "completed", "planned"] },
+			{ key: "rating", label: "Rating", type: "number" },
+			{ key: "cover", label: "Cover URL", type: "image" },
+			{ key: "description", label: "Description", type: "textarea" },
+			{ key: "episodes", label: "Episodes" },
+			{ key: "year", label: "Year" },
+			{ key: "genre", label: "Genre", type: "tags" },
+			{ key: "studio", label: "Studio" },
+			{ key: "link", label: "Link" },
+			{ key: "progress", label: "Progress", type: "number" },
+			{ key: "totalEpisodes", label: "Total Episodes", type: "number" },
+		]}
+	/>
+</AdminLayout>

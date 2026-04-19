@@ -1,0 +1,357 @@
+---
+export const prerender = false;
+
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { getRecentAccessLogs } from "../../lib/repositories/access-logs";
+import { getAllDiary } from "../../lib/repositories/diary";
+import { getAllFriends } from "../../lib/repositories/friends";
+import { getAllPosts } from "../../lib/repositories/posts";
+import { getAllProjects } from "../../lib/repositories/projects";
+
+const posts = getAllPosts(true);
+const projects = getAllProjects();
+const friends = getAllFriends();
+const diary = getAllDiary();
+const accessLogs = getRecentAccessLogs(30);
+
+function formatVisitedAt(value: string) {
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) {
+		return value;
+	}
+
+	return date.toLocaleString("zh-CN", {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit",
+		hour12: false,
+	});
+}
+
+function formatLocation(log: (typeof accessLogs)[number]) {
+	const segments = [log.city, log.region, log.countryName].filter(Boolean);
+	if (segments.length > 0) {
+		return segments.join(", ");
+	}
+
+	if (log.countryCode === "LOCAL") {
+		return "Local Network";
+	}
+
+	if (log.countryCode) {
+		return log.countryCode;
+	}
+
+	return "Unknown location";
+}
+---
+
+<AdminLayout title="Dashboard">
+	<div class="stats-grid">
+		<div class="stat-card">
+			<div class="stat-number">{posts.length}</div>
+			<div class="stat-label" data-admin-i18n-literal="Posts">文章</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-number">{posts.filter((post) => post.draft).length}</div>
+			<div class="stat-label" data-admin-i18n-literal="Drafts">草稿数</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-number">{projects.length}</div>
+			<div class="stat-label" data-admin-i18n-literal="Projects">项目</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-number">{friends.length}</div>
+			<div class="stat-label" data-admin-i18n-literal="Friends">友链</div>
+		</div>
+		<div class="stat-card">
+			<div class="stat-number">{diary.length}</div>
+			<div class="stat-label" data-admin-i18n-literal="Diary Entries">日记条目</div>
+		</div>
+	</div>
+
+	<div class="dashboard-panels">
+		<section class="panel-card">
+			<div class="panel-header">
+				<h3 data-admin-i18n-literal="Recent Posts">最近文章</h3>
+			</div>
+			<div class="recent-list">
+				{posts.slice(0, 5).map((post) => (
+					<div class="recent-item">
+						<a href={`/admin/posts/${post.id}/`}>{post.title}</a>
+						<span class="recent-date">{formatVisitedAt(post.published).slice(0, 10)}</span>
+						{post.draft && (
+							<span class="badge draft" data-admin-i18n-literal="Draft">草稿</span>
+						)}
+					</div>
+				))}
+				{posts.length === 0 && (
+					<p class="empty" data-admin-i18n-literal="No posts yet">暂无文章</p>
+				)}
+			</div>
+		</section>
+
+		<section class="panel-card access-card">
+			<div class="panel-header">
+				<div>
+					<h3 data-admin-i18n-literal="Access Logs">访问记录</h3>
+					<p
+						class="panel-subtitle"
+						data-admin-i18n-literal="Track public page visits by IP, location, and time. Logs can be cleared anytime."
+					>
+						记录前台页面访问的 IP、地理位置和时间，可随时一键清空。
+					</p>
+				</div>
+				<button
+					id="clear-access-logs"
+					type="button"
+					class="danger-btn"
+					data-admin-i18n-literal="Clear Access Logs"
+				>
+					清空访问记录
+				</button>
+			</div>
+
+			{accessLogs.length > 0 ? (
+				<div class="access-table-wrapper">
+					<table class="access-table">
+						<thead>
+							<tr>
+								<th data-admin-i18n-literal="IP Address">IP 地址</th>
+								<th data-admin-i18n-literal="Location">地理位置</th>
+								<th data-admin-i18n-literal="Visited Page">访问页面</th>
+								<th data-admin-i18n-literal="Visited At">访问时间</th>
+							</tr>
+						</thead>
+						<tbody>
+							{accessLogs.map((log) => (
+								<tr>
+									<td class="mono">{log.ip}</td>
+									<td>{formatLocation(log)}</td>
+									<td class="mono">{log.path}</td>
+									<td>{formatVisitedAt(log.visitedAt)}</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			) : (
+				<p class="empty" data-admin-i18n-literal="No access logs yet">
+					还没有访问记录
+				</p>
+			)}
+		</section>
+	</div>
+
+	<script is:inline>
+		const clearAccessLogsButton = document.getElementById("clear-access-logs");
+
+		clearAccessLogsButton?.addEventListener("click", async () => {
+			const lang =
+				typeof window !== "undefined" &&
+				window.localStorage.getItem("adminLanguage") === "en"
+					? "en"
+					: "zh-CN";
+
+			const confirmMessage =
+				lang === "en" ? "Clear access logs?" : "确定要清空访问记录吗？";
+			const errorMessage =
+				lang === "en"
+					? "Failed to clear access logs"
+					: "清空访问记录失败";
+
+			if (!window.confirm(confirmMessage)) {
+				return;
+			}
+
+			clearAccessLogsButton.setAttribute("disabled", "true");
+			try {
+				const response = await fetch("/api/admin/access-logs/", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ action: "clear" }),
+				});
+
+				if (!response.ok) {
+					throw new Error(errorMessage);
+				}
+
+				window.location.reload();
+			} catch (_error) {
+				window.alert(errorMessage);
+				clearAccessLogsButton.removeAttribute("disabled");
+			}
+		});
+	</script>
+
+	<style>
+		.stats-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+			gap: 16px;
+			margin-bottom: 32px;
+		}
+
+		.stat-card,
+		.panel-card {
+			background: #fff;
+			border-radius: 12px;
+			padding: 20px;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+		}
+
+		.stat-card {
+			text-align: center;
+		}
+
+		.stat-number {
+			font-size: 32px;
+			font-weight: 700;
+			color: #6366f1;
+		}
+
+		.stat-label {
+			font-size: 13px;
+			color: #666;
+			margin-top: 4px;
+		}
+
+		.dashboard-panels {
+			display: flex;
+			flex-direction: column;
+			gap: 24px;
+		}
+
+		.panel-header {
+			display: flex;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 16px;
+			margin-bottom: 16px;
+		}
+
+		.panel-header h3 {
+			font-size: 18px;
+			font-weight: 700;
+			margin: 0;
+		}
+
+		.panel-subtitle {
+			margin: 6px 0 0;
+			font-size: 13px;
+			color: #667085;
+		}
+
+		.recent-list {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.recent-item {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			padding: 10px 0;
+			border-bottom: 1px solid #f0f0f0;
+		}
+
+		.recent-item:last-child {
+			border-bottom: none;
+		}
+
+		.recent-item a {
+			color: #333;
+			text-decoration: none;
+			flex: 1;
+		}
+
+		.recent-item a:hover {
+			color: #6366f1;
+		}
+
+		.recent-date {
+			font-size: 12px;
+			color: #999;
+		}
+
+		.badge {
+			font-size: 11px;
+			padding: 2px 8px;
+			border-radius: 999px;
+		}
+
+		.badge.draft {
+			background: #fef3c7;
+			color: #92400e;
+		}
+
+		.access-table-wrapper {
+			overflow-x: auto;
+		}
+
+		.access-table {
+			width: 100%;
+			border-collapse: collapse;
+			font-size: 13px;
+		}
+
+		.access-table th,
+		.access-table td {
+			padding: 12px 10px;
+			border-bottom: 1px solid #eef2f7;
+			text-align: left;
+			vertical-align: top;
+		}
+
+		.access-table th {
+			font-size: 12px;
+			font-weight: 700;
+			color: #667085;
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+		}
+
+		.access-table tbody tr:last-child td {
+			border-bottom: none;
+		}
+
+		.mono {
+			font-family:
+				ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Consolas,
+				"Liberation Mono", monospace;
+			word-break: break-all;
+		}
+
+		.danger-btn {
+			border: none;
+			border-radius: 10px;
+			background: #fee2e2;
+			color: #b91c1c;
+			padding: 10px 14px;
+			font-size: 13px;
+			font-weight: 700;
+			cursor: pointer;
+			transition: background 0.2s ease;
+		}
+
+		.danger-btn:hover:not([disabled]) {
+			background: #fecaca;
+		}
+
+		.danger-btn[disabled] {
+			opacity: 0.6;
+			cursor: not-allowed;
+		}
+
+		.empty {
+			color: #999;
+			font-size: 14px;
+			margin: 0;
+		}
+	</style>
+</AdminLayout>

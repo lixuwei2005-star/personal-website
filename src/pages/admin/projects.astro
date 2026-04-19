@@ -1,0 +1,71 @@
+---
+export const prerender = false;
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import DataTable from "../../components/admin/DataTable.svelte";
+import { getAllProjects } from "../../lib/repositories/projects";
+
+const projects = getAllProjects();
+const techStackPresets = [
+	"Java",
+	"Python",
+	"C++",
+	"C#",
+	"JavaScript",
+	"TypeScript",
+	"Go",
+	"Rust",
+	"PHP",
+	"Swift",
+	"Kotlin",
+	"Dart",
+	"HTML5",
+	"CSS3",
+	"React",
+	"Vue",
+	"Svelte",
+	"Astro",
+	"Next.js",
+	"Node.js",
+	"Express",
+	"Spring Boot",
+	"Django",
+	"Flask",
+	"FastAPI",
+	"MySQL",
+	"PostgreSQL",
+	"MongoDB",
+	"Redis",
+	"Docker",
+	"Tailwind CSS",
+];
+---
+
+<AdminLayout title="Projects">
+	<DataTable
+		client:load
+		apiBase="/api/admin/projects"
+		items={projects}
+		idField="id"
+		columns={[
+			{ key: "title", label: "Title" },
+			{ key: "category", label: "Category" },
+			{ key: "status", label: "Status" },
+			{ key: "techStack", label: "Tech", type: "tags" },
+			{ key: "featured", label: "Featured", type: "boolean" },
+		]}
+		editFields={[
+			{ key: "title", label: "Title" },
+			{ key: "description", label: "Description", type: "textarea" },
+			{ key: "image", label: "Image URL", type: "image" },
+			{ key: "category", label: "Category", type: "select", options: ["web", "mobile", "desktop", "other"] },
+			{ key: "techStack", label: "Tech Stack", type: "tags", presets: techStackPresets, presetRemovable: false },
+			{ key: "status", label: "Status", type: "select", options: ["completed", "in-progress", "planned"] },
+			{ key: "sourceCode", label: "Source Code URL" },
+			{ key: "visitUrl", label: "Visit URL" },
+			{ key: "startDate", label: "Start Date" },
+			{ key: "endDate", label: "End Date" },
+			{ key: "featured", label: "Featured", type: "boolean" },
+			{ key: "tags", label: "Tags", type: "tags" },
+		]}
+	/>
+</AdminLayout>

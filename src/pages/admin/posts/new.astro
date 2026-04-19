@@ -1,0 +1,13 @@
+---
+export const prerender = false;
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import PostEditor from "../../../components/admin/PostEditor.svelte";
+---
+
+<AdminLayout title="New Post">
+	<a href="/admin/posts/" class="back-link">
+		<span aria-hidden="true">&larr; </span>
+		<span data-admin-i18n-literal="Back to Posts">返回文章列表</span>
+	</a>
+	<PostEditor client:load />
+</AdminLayout>

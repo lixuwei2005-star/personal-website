@@ -1,0 +1,21 @@
+---
+export const prerender = false;
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import PostEditor from "../../../components/admin/PostEditor.svelte";
+import { getPostById } from "../../../lib/repositories/posts";
+
+const id = Number(Astro.params.id);
+const post = getPostById(id);
+
+if (!post) {
+	return Astro.redirect("/admin/posts/");
+}
+---
+
+<AdminLayout title={`Edit: ${post.title}`} titleKey="post.editTitle" titleParams={{ title: post.title }}>
+	<a href="/admin/posts/" class="back-link">
+		<span aria-hidden="true">&larr; </span>
+		<span data-admin-i18n-literal="Back to Posts">返回文章列表</span>
+	</a>
+	<PostEditor client:load post={post} />
+</AdminLayout>

@@ -1,0 +1,54 @@
+---
+export const prerender = false;
+
+import Comment from "@components/comment/index.astro";
+import { PageHeader } from "@components/features/page-header";
+import Markdown from "@components/misc/Markdown.astro";
+import { getEntry, render } from "astro:content";
+
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+const title = "关于本站";
+
+let aboutSiteContentVersion = "initial";
+try {
+	const aboutSiteVersionModule = await import("../generated/about-site");
+	aboutSiteContentVersion =
+		aboutSiteVersionModule.aboutSiteContentVersion || "initial";
+} catch (error) {
+	console.warn(
+		"Failed to load generated about-site version, falling back to initial:",
+		error,
+	);
+}
+
+const aboutSitePost = await getEntry("spec", "about-site");
+
+if (!aboutSitePost) {
+	throw new Error("About site page content not found");
+}
+
+const { Content } = await render(aboutSitePost);
+---
+
+<MainGridLayout title={title}>
+	<script>
+		import("../scripts/right-sidebar-layout.js");
+	</script>
+	<div
+		class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32"
+		data-about-site-version={aboutSiteContentVersion}
+	>
+		<div class="card-base z-10 px-9 py-6 relative w-full">
+			<PageHeader title={title} />
+
+			<Markdown class="mt-2">
+				<Content />
+			</Markdown>
+		</div>
+	</div>
+
+	<div class="mt-4">
+		<Comment path="/about-site/" />
+	</div>
+</MainGridLayout>

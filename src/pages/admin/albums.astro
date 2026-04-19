@@ -1,0 +1,10 @@
+---
+export const prerender = false;
+
+import AlbumEditor from "../../components/admin/AlbumEditor.svelte";
+import AdminLayout from "../../layouts/AdminLayout.astro";
+---
+
+<AdminLayout title="Albums">
+	<AlbumEditor client:load items={[]} tagPresets={[]} />
+</AdminLayout>

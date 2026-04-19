@@ -1,0 +1,24 @@
+---
+export const prerender = false;
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import PostList from "../../../components/admin/PostList.svelte";
+import { getAllPosts } from "../../../lib/repositories/posts";
+
+const posts = getAllPosts(true);
+---
+
+<AdminLayout title="Posts">
+	<div class="header-actions">
+		<a href="/admin/posts/new/" class="btn-new">
+			<span aria-hidden="true">+ </span>
+			<span data-admin-i18n-literal="New Post">新建文章</span>
+		</a>
+	</div>
+	<PostList client:load posts={posts} />
+
+	<style>
+		.header-actions { margin-bottom: 16px; display: flex; justify-content: flex-end; }
+		.btn-new { display: inline-block; padding: 10px 20px; background: #6366f1; color: #fff; border-radius: 8px; text-decoration: none; font-size: 14px; }
+		.btn-new:hover { background: #4f46e5; }
+	</style>
+</AdminLayout>

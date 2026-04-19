@@ -1,0 +1,13 @@
+---
+export const prerender = false;
+
+import FootprintsEditor from "../../components/admin/FootprintsEditor.svelte";
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { getAllFootprints } from "../../lib/repositories/footprints";
+
+const footprints = getAllFootprints();
+---
+
+<AdminLayout title="Footprints">
+	<FootprintsEditor client:load items={footprints} />
+</AdminLayout>

@@ -1,0 +1,26 @@
+---
+import type { PhotoCardProps } from "./types";
+
+const { src, alt = "", albumId, layout = "masonry" } =
+	Astro.props as PhotoCardProps;
+---
+
+<div class="gallery-photo-card break-inside-avoid mb-3">
+	<div
+		data-fancybox={`gallery-${albumId}`}
+		data-src={src}
+		data-type="image"
+		class="block rounded-xl overflow-hidden group cursor-pointer"
+	>
+		<img
+			src={src}
+			alt={alt}
+			loading="lazy"
+			decoding="async"
+			class:list={[
+				"w-full object-cover transition-transform duration-300 group-hover:scale-105",
+				layout === "grid" ? "aspect-square" : "h-auto",
+			]}
+		/>
+	</div>
+</div>

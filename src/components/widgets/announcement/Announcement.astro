@@ -1,0 +1,116 @@
+---
+import { Icon } from "astro-icon/components";
+
+import { announcementConfig } from "../../../config";
+import type { AnnouncementConfig } from "../../../types/config";
+import I18nKey from "../../../i18n/i18nKey";
+import { i18n } from "../../../i18n/translation";
+import WidgetLayout from "../common/WidgetLayout.astro";
+
+interface Props {
+	class?: string;
+	style?: string;
+	announcement?: AnnouncementConfig;
+	widgetId?: string;
+}
+
+const { class: className, style, announcement, widgetId } = Astro.props;
+const config = announcement ?? announcementConfig[0];
+const resolvedWidgetId =
+	widgetId ?? `announcement-${String(config?.id ?? "default")}`;
+const closeLabel = i18n(I18nKey.announcementClose);
+---
+
+{
+	config && (
+		<WidgetLayout
+			name={config.title || i18n(I18nKey.announcement)}
+			id={resolvedWidgetId}
+			class={className}
+			style={style}
+		>
+			<div>
+				<div class="text-neutral-600 dark:text-neutral-300 leading-relaxed mb-3">
+					{config.content}
+				</div>
+
+				<div class="flex items-center justify-between gap-3">
+					<div>
+						{
+							config.link &&
+								config.link.enable !== false &&
+								config.link.url && (
+									<a
+										href={config.link.url}
+										target={config.link.external ? "_blank" : "_self"}
+										rel={
+											config.link.external
+												? "noopener noreferrer"
+												: undefined
+										}
+										class="btn-regular rounded-lg px-3 py-1.5 text-sm font-medium active:scale-95 transition-transform"
+									>
+										{config.link.text || "Learn More"}
+									</a>
+								)
+						}
+					</div>
+
+					{
+						config.closable && (
+							<button
+								class="btn-regular rounded-lg h-8 w-8 text-sm hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+								onclick={`closeAnnouncement(${JSON.stringify(resolvedWidgetId)})`}
+								data-announcement-close={resolvedWidgetId}
+								aria-label={closeLabel}
+							>
+								<Icon name="fa7-solid:xmark" class="text-sm" />
+							</button>
+						)
+					}
+				</div>
+			</div>
+		</WidgetLayout>
+	)
+}
+
+<script>
+	function closeAnnouncement(widgetId: string) {
+		const safeWidgetId = String(widgetId || "");
+		if (!safeWidgetId) {
+			return;
+		}
+
+		const widgetLayouts = document.querySelectorAll(
+			`widget-layout[data-id="${safeWidgetId}"]`,
+		);
+
+		if (widgetLayouts.length > 0) {
+			widgetLayouts.forEach((widget) => {
+				(widget as HTMLElement).style.display = "none";
+			});
+			localStorage.setItem(
+				`announcementClosed:${safeWidgetId}`,
+				"true",
+			);
+		}
+	}
+
+	document.addEventListener("DOMContentLoaded", function () {
+		const widgetLayouts = document.querySelectorAll(
+			'widget-layout[data-id^="announcement-"]',
+		);
+
+		widgetLayouts.forEach((widget) => {
+			const widgetId = widget.getAttribute("data-id");
+			if (
+				widgetId &&
+				localStorage.getItem(`announcementClosed:${widgetId}`) === "true"
+			) {
+				(widget as HTMLElement).style.display = "none";
+			}
+		});
+	});
+
+	(window as any).closeAnnouncement = closeAnnouncement;
+</script>

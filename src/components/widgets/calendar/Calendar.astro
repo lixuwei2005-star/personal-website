@@ -1,0 +1,19 @@
+---
+import WidgetLayout from "../common/WidgetLayout.astro";
+import CalendarWidget from "./Calendar.svelte";
+
+interface Props {
+	class?: string;
+	style?: string;
+}
+
+const { class: className, style } = Astro.props;
+---
+
+<WidgetLayout
+	id="calendar-widget"
+	class={`hidden md:block ${className}`}
+	style={style}
+>
+	<CalendarWidget client:visible />
+</WidgetLayout>

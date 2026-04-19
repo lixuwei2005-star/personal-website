@@ -1,0 +1,12 @@
+---
+export const prerender = false;
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import DiaryEditor from "../../components/admin/DiaryEditor.svelte";
+import { getAllDiary } from "../../lib/repositories/diary";
+
+const diary = getAllDiary();
+---
+
+<AdminLayout title="Diary">
+	<DiaryEditor client:load items={diary} />
+</AdminLayout>

@@ -1,0 +1,367 @@
+---
+/**
+ * GridScripts keeps wallpaper mode and post list layout in sync during
+ * initial render, wallpaper switching, and Swup page transitions.
+ */
+
+interface Props {
+	navbarTransparentMode?: string;
+	defaultWallpaperMode?: string;
+	wallpaperModeSwitchDisplay?: string;
+	defaultPostListLayout?: string;
+	allowPostListSwitch?: boolean;
+	BANNER_HEIGHT?: number;
+	pageScaling?: { enable: boolean; targetWidth?: number };
+}
+
+const {
+	navbarTransparentMode = "semi",
+	defaultWallpaperMode = "banner",
+	wallpaperModeSwitchDisplay = "desktop",
+	defaultPostListLayout = "list",
+	allowPostListSwitch = true,
+	BANNER_HEIGHT = 35,
+	pageScaling = { enable: false },
+} = Astro.props;
+---
+
+<script
+	type="module"
+	is:inline
+	define:vars={{
+		navbarTransparentMode,
+		defaultWallpaperMode,
+		wallpaperModeSwitchDisplay,
+		defaultPostListLayout,
+		allowPostListSwitch,
+		BANNER_HEIGHT,
+		pageScaling,
+	}}
+>
+	const wallpaperModeDefaultStorageKey = "wallpaperModeDefault";
+	const validWallpaperModes = ["banner", "fullscreen", "none"];
+
+	function isValidWallpaperMode(mode) {
+		return (
+			typeof mode === "string" &&
+			validWallpaperModes.includes(mode)
+		);
+	}
+
+	function getWallpaperMode() {
+		const storedMode = localStorage.getItem("wallpaperMode");
+		const storedDefaultMode = localStorage.getItem(
+			wallpaperModeDefaultStorageKey,
+		);
+
+		if (wallpaperModeSwitchDisplay === "off") {
+			localStorage.setItem("wallpaperMode", defaultWallpaperMode);
+			localStorage.setItem(
+				wallpaperModeDefaultStorageKey,
+				defaultWallpaperMode,
+			);
+			return defaultWallpaperMode;
+		}
+
+		if (
+			storedDefaultMode !== defaultWallpaperMode ||
+			!isValidWallpaperMode(storedMode)
+		) {
+			localStorage.setItem("wallpaperMode", defaultWallpaperMode);
+			localStorage.setItem(
+				wallpaperModeDefaultStorageKey,
+				defaultWallpaperMode,
+			);
+			return defaultWallpaperMode;
+		}
+
+		return storedMode;
+	}
+
+	function getStoredLayoutMode() {
+		if (!allowPostListSwitch) {
+			localStorage.setItem("postListLayout", defaultPostListLayout);
+			sessionStorage.setItem("postListLayout", defaultPostListLayout);
+			return defaultPostListLayout;
+		}
+
+		return localStorage.getItem("postListLayout") || defaultPostListLayout;
+	}
+
+	function getMainContent() {
+		const mainContent = document.querySelector(
+			".absolute.w-full.z-30.pointer-events-none",
+		);
+		return mainContent instanceof HTMLElement ? mainContent : null;
+	}
+
+	function forceReflow() {
+		void document.body.offsetHeight;
+	}
+
+	function syncWallpaperBodyClasses(body, wallpaperMode) {
+		body.classList.remove(
+			"enable-banner",
+			"wallpaper-transparent",
+			"no-banner-mode",
+		);
+
+		if (wallpaperMode === "banner") {
+			body.classList.add("enable-banner");
+			return;
+		}
+
+		body.classList.add("no-banner-mode");
+		if (wallpaperMode === "fullscreen") {
+			body.classList.add("wallpaper-transparent");
+		}
+	}
+
+	function syncWallpaperLayoutState(wallpaperMode) {
+		const topRow = document.getElementById("top-row");
+		const mainContent = getMainContent();
+
+		if (topRow instanceof HTMLElement) {
+			if (wallpaperMode === "banner") {
+				topRow.style.removeProperty("height");
+			} else {
+				topRow.style.height = "4.5rem";
+			}
+		}
+
+		if (!mainContent) {
+			return;
+		}
+
+		mainContent.classList.toggle(
+			"wallpaper-transparent",
+			wallpaperMode === "fullscreen",
+		);
+		mainContent.classList.toggle(
+			"no-banner-layout",
+			wallpaperMode !== "banner",
+		);
+
+		if (wallpaperMode === "banner") {
+			mainContent.style.top = `${BANNER_HEIGHT}vh`;
+			mainContent.style.removeProperty("min-height");
+			return;
+		}
+
+		mainContent.style.top = "5.5rem";
+		mainContent.style.minHeight = "calc(100vh - 5.5rem)";
+	}
+
+	function syncPostListLayout(layoutMode) {
+		const mainGrid = document.getElementById("main-grid");
+		if (mainGrid) {
+			mainGrid.setAttribute("data-layout-mode", layoutMode);
+		}
+
+		const rightSidebar = document.querySelector(".right-sidebar-container");
+		if (rightSidebar) {
+			rightSidebar.classList.toggle(
+				"hidden-in-grid-mode",
+				layoutMode === "grid",
+			);
+		}
+
+		const postListContainer = document.getElementById("post-list-container");
+		if (!postListContainer) {
+			return;
+		}
+
+		postListContainer.classList.remove("list-mode", "grid-mode");
+
+		if (layoutMode === "grid") {
+			postListContainer.classList.add("grid-mode");
+			postListContainer.classList.add(
+				"grid",
+				"grid-cols-1",
+				"lg:grid-cols-2",
+				"gap-6",
+			);
+			postListContainer.classList.remove("flex", "flex-col");
+			return;
+		}
+
+		postListContainer.classList.add("list-mode");
+		postListContainer.classList.add("flex", "flex-col");
+		postListContainer.classList.remove(
+			"grid",
+			"grid-cols-1",
+			"lg:grid-cols-2",
+			"gap-6",
+		);
+	}
+
+	(function () {
+		const wallpaperMode = getWallpaperMode();
+		syncWallpaperBodyClasses(document.body, wallpaperMode);
+
+		requestAnimationFrame(function () {
+			syncWallpaperLayoutState(wallpaperMode);
+			syncPostListLayout(getStoredLayoutMode());
+		});
+	})();
+
+	function applyWallpaperMode() {
+		const wallpaperMode = getWallpaperMode();
+		const bannerWrapper = document.getElementById("banner-wrapper");
+		const fullscreenWallpaper = document.querySelector(
+			"[data-fullscreen-wallpaper]",
+		);
+		const navbar = document.getElementById("navbar");
+		const tocWrapper = document.getElementById("toc-wrapper");
+
+		switch (wallpaperMode) {
+			case "banner":
+				if (bannerWrapper instanceof HTMLElement) {
+					bannerWrapper.style.removeProperty("display");
+				}
+				if (fullscreenWallpaper instanceof HTMLElement) {
+					fullscreenWallpaper.style.display = "none";
+				}
+				if (tocWrapper instanceof HTMLElement) {
+					const scrollTop = document.documentElement.scrollTop;
+					const bannerHeight = window.innerHeight * (BANNER_HEIGHT / 100);
+					if (scrollTop <= bannerHeight) {
+						tocWrapper.classList.add("toc-hide");
+					}
+				}
+
+				syncWallpaperBodyClasses(document.body, wallpaperMode);
+				forceReflow();
+				syncWallpaperLayoutState(wallpaperMode);
+
+				if (navbar instanceof HTMLElement) {
+					navbar.removeAttribute("data-dynamic-transparent");
+					navbar.setAttribute(
+						"data-transparent-mode",
+						navbarTransparentMode,
+					);
+					if (
+						navbarTransparentMode === "semifull" &&
+						window.initSemifullScrollDetection
+					) {
+						window.initSemifullScrollDetection();
+					}
+				}
+
+				forceReflow();
+				break;
+
+			case "fullscreen":
+				if (bannerWrapper instanceof HTMLElement) {
+					bannerWrapper.style.display = "none";
+				}
+				if (fullscreenWallpaper instanceof HTMLElement) {
+					fullscreenWallpaper.style.removeProperty("display");
+				}
+				if (tocWrapper instanceof HTMLElement) {
+					tocWrapper.classList.remove("toc-hide");
+				}
+
+				syncWallpaperBodyClasses(document.body, wallpaperMode);
+				forceReflow();
+				syncWallpaperLayoutState(wallpaperMode);
+
+				if (navbar instanceof HTMLElement) {
+					navbar.setAttribute("data-dynamic-transparent", "semi");
+					navbar.removeAttribute("data-transparent-mode");
+				}
+
+				forceReflow();
+				break;
+
+			case "none":
+				if (bannerWrapper instanceof HTMLElement) {
+					bannerWrapper.style.display = "none";
+				}
+				if (fullscreenWallpaper instanceof HTMLElement) {
+					fullscreenWallpaper.style.display = "none";
+				}
+				if (tocWrapper instanceof HTMLElement) {
+					tocWrapper.classList.remove("toc-hide");
+				}
+
+				syncWallpaperBodyClasses(document.body, wallpaperMode);
+				forceReflow();
+				syncWallpaperLayoutState(wallpaperMode);
+
+				if (navbar instanceof HTMLElement) {
+					navbar.setAttribute("data-dynamic-transparent", "none");
+					navbar.removeAttribute("data-transparent-mode");
+				}
+
+				forceReflow();
+				break;
+		}
+	}
+
+	window.addEventListener("wallpaper-mode-change", function () {
+		applyWallpaperMode();
+	});
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", applyWallpaperMode);
+	} else {
+		applyWallpaperMode();
+	}
+
+	function setupSwupLayoutSync() {
+		// @ts-ignore
+		if (typeof window !== "undefined" && window.swup) {
+			// @ts-ignore
+			window.swup.hooks.on("animation:out:start", function () {
+				const savedLayout = localStorage.getItem("postListLayout");
+				if (savedLayout) {
+					// @ts-ignore
+					window.__pendingLayoutMode = savedLayout;
+				}
+			});
+
+			// @ts-ignore
+			window.swup.hooks.on("content:replace", function () {
+				// @ts-ignore
+				const currentLayout =
+					window.__pendingLayoutMode || getStoredLayoutMode();
+
+				syncPostListLayout(currentLayout);
+
+				// @ts-ignore
+				delete window.__pendingLayoutMode;
+			});
+
+			return true;
+		}
+
+		return false;
+	}
+
+	if (!setupSwupLayoutSync()) {
+		const checkSwup = setInterval(function () {
+			if (setupSwupLayoutSync()) {
+				clearInterval(checkSwup);
+			}
+		}, 50);
+
+		setTimeout(function () {
+			clearInterval(checkSwup);
+		}, 2000);
+	}
+
+	document.addEventListener("swup:page:view", function () {
+		applyWallpaperMode();
+
+		requestAnimationFrame(function () {
+			syncPostListLayout(getStoredLayoutMode());
+		});
+	});
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", function () {
+			syncPostListLayout(getStoredLayoutMode());
+		});
+	}
+</script>

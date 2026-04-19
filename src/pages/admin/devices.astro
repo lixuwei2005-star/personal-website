@@ -1,0 +1,31 @@
+---
+export const prerender = false;
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import DataTable from "../../components/admin/DataTable.svelte";
+import { getAllDevicesFlat } from "../../lib/repositories/devices";
+
+const devices = getAllDevicesFlat();
+const categoryPresets = [...new Set(devices.map((device) => device.category_name).filter(Boolean))];
+---
+
+<AdminLayout title="Devices">
+	<DataTable
+		client:load
+		apiBase="/api/admin/devices"
+		items={devices}
+		columns={[
+			{ key: "category_name", label: "Category" },
+			{ key: "name", label: "Name" },
+			{ key: "specs", label: "Specs" },
+			{ key: "description", label: "Description" },
+		]}
+		editFields={[
+			{ key: "category_name", label: "Category", presets: categoryPresets },
+			{ key: "name", label: "Name" },
+			{ key: "image", label: "Image URL", type: "image" },
+			{ key: "specs", label: "Specs" },
+			{ key: "description", label: "Description", type: "textarea" },
+			{ key: "link", label: "Link" },
+		]}
+	/>
+</AdminLayout>

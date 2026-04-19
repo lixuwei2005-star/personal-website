@@ -1,0 +1,41 @@
+---
+export const prerender = false;
+
+import AnnouncementSettingsEditor from "../../components/admin/AnnouncementSettingsEditor.svelte";
+import DataTable from "../../components/admin/DataTable.svelte";
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import {
+	getAllAnnouncements,
+	getAnnouncementGlobalSettings,
+} from "../../lib/repositories/announcements";
+
+const announcements = getAllAnnouncements();
+const announcementSettings = getAnnouncementGlobalSettings();
+---
+
+<AdminLayout title="Announcements">
+	<DataTable
+		client:load
+		apiBase="/api/admin/announcements"
+		items={announcements}
+		idField="id"
+		columns={[
+			{ key: "title", label: "Title" },
+			{ key: "pinned", label: "Pin to top", type: "boolean" },
+			{ key: "closable", label: "Closable", type: "boolean" },
+			{ key: "sortOrder", label: "Sort Order" },
+		]}
+		editFields={[
+			{ key: "title", label: "Title" },
+			{ key: "content", label: "Content", type: "textarea" },
+			{ key: "closable", label: "Closable", type: "boolean" },
+			{ key: "linkEnable", label: "Link Enabled", type: "boolean" },
+			{ key: "linkText", label: "Link Text" },
+			{ key: "linkUrl", label: "Link URL" },
+			{ key: "linkExternal", label: "External Link", type: "boolean" },
+			{ key: "pinned", label: "Pin to top", type: "boolean" },
+			{ key: "sortOrder", label: "Sort Order", type: "number" },
+		]}
+	/>
+	<AnnouncementSettingsEditor client:load settings={announcementSettings} />
+</AdminLayout>

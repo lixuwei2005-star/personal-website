@@ -1,0 +1,16 @@
+---
+import FloatingButton from "@components/common/FloatingButton.astro";
+---
+
+<FloatingButton
+	id="refresh-page-btn"
+	icon="material-symbols:refresh-rounded"
+	ariaLabel="Refresh Page"
+	onclick="refreshCurrentPage()"
+/>
+
+<script is:raw is:inline>
+	function refreshCurrentPage() {
+		window.location.reload();
+	}
+</script>

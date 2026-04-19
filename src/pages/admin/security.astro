@@ -1,0 +1,18 @@
+---
+export const prerender = false;
+
+import SecurityEditor from "../../components/admin/SecurityEditor.svelte";
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { getAdminUserById } from "../../lib/auth";
+
+const userId = Number((Astro.locals as { userId?: number }).userId);
+const currentUser = getAdminUserById(userId);
+
+if (!currentUser) {
+	return Astro.redirect("/admin/login/");
+}
+---
+
+<AdminLayout title="Security">
+	<SecurityEditor client:load username={currentUser.username} />
+</AdminLayout>

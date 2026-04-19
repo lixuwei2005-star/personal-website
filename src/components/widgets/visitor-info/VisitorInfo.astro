@@ -1,0 +1,615 @@
+---
+import { Icon } from "astro-icon/components";
+
+import { siteConfig } from "../../../config";
+import WidgetLayout from "../common/WidgetLayout.astro";
+
+interface Props {
+	class?: string;
+	style?: string;
+}
+
+const { class: className, style } = Astro.props;
+
+const lang = siteConfig.lang || "en";
+
+const texts = lang.startsWith("zh")
+	? {
+			title: "所在地",
+			locating: "定位中...",
+			unknownLocation: "未知位置",
+			loadingWeather: "天气加载中...",
+			weatherUnavailable: "天气暂不可用",
+			clearSky: "晴朗",
+			mainlyClear: "晴",
+			partlyCloudy: "多云",
+			overcast: "阴天",
+			fog: "有雾",
+			depositingRimeFog: "雾凇",
+			lightDrizzle: "小毛毛雨",
+			moderateDrizzle: "毛毛雨",
+			denseDrizzle: "浓毛毛雨",
+			lightFreezingDrizzle: "小冻毛毛雨",
+			denseFreezingDrizzle: "冻毛毛雨",
+			slightRain: "小雨",
+			moderateRain: "中雨",
+			heavyRain: "大雨",
+			lightFreezingRain: "小冻雨",
+			heavyFreezingRain: "冻雨",
+			slightSnow: "小雪",
+			moderateSnow: "中雪",
+			heavySnow: "大雪",
+			snowGrains: "米雪",
+			slightRainShowers: "阵雨",
+			moderateRainShowers: "中阵雨",
+			violentRainShowers: "强阵雨",
+			slightSnowShowers: "阵雪",
+			heavySnowShowers: "强阵雪",
+			thunderstorm: "雷暴",
+			thunderstormHail: "雷暴冰雹",
+		}
+	: lang.startsWith("ja")
+		? {
+				title: "現在地",
+				locating: "位置情報を取得中...",
+				unknownLocation: "不明な場所",
+				loadingWeather: "天気を取得中...",
+				weatherUnavailable: "天気を取得できません",
+				clearSky: "快晴",
+				mainlyClear: "晴れ",
+				partlyCloudy: "晴れ時々くもり",
+				overcast: "くもり",
+				fog: "霧",
+				depositingRimeFog: "着氷性の霧",
+				lightDrizzle: "弱い霧雨",
+				moderateDrizzle: "霧雨",
+				denseDrizzle: "強い霧雨",
+				lightFreezingDrizzle: "弱い着氷性霧雨",
+				denseFreezingDrizzle: "強い着氷性霧雨",
+				slightRain: "小雨",
+				moderateRain: "雨",
+				heavyRain: "大雨",
+				lightFreezingRain: "弱い着氷性の雨",
+				heavyFreezingRain: "強い着氷性の雨",
+				slightSnow: "小雪",
+				moderateSnow: "雪",
+				heavySnow: "大雪",
+				snowGrains: "細氷",
+				slightRainShowers: "にわか雨",
+				moderateRainShowers: "雨のにわか雨",
+				violentRainShowers: "激しいにわか雨",
+				slightSnowShowers: "にわか雪",
+				heavySnowShowers: "強いにわか雪",
+				thunderstorm: "雷雨",
+				thunderstormHail: "ひょうを伴う雷雨",
+			}
+		: {
+				title: "Local Info",
+				locating: "Locating...",
+				unknownLocation: "Unknown location",
+				loadingWeather: "Loading weather...",
+				weatherUnavailable: "Weather unavailable",
+				clearSky: "Clear sky",
+				mainlyClear: "Mostly clear",
+				partlyCloudy: "Partly cloudy",
+				overcast: "Overcast",
+				fog: "Fog",
+				depositingRimeFog: "Rime fog",
+				lightDrizzle: "Light drizzle",
+				moderateDrizzle: "Drizzle",
+				denseDrizzle: "Dense drizzle",
+				lightFreezingDrizzle: "Light freezing drizzle",
+				denseFreezingDrizzle: "Freezing drizzle",
+				slightRain: "Light rain",
+				moderateRain: "Rain",
+				heavyRain: "Heavy rain",
+				lightFreezingRain: "Light freezing rain",
+				heavyFreezingRain: "Freezing rain",
+				slightSnow: "Light snow",
+				moderateSnow: "Snow",
+				heavySnow: "Heavy snow",
+				snowGrains: "Snow grains",
+				slightRainShowers: "Rain showers",
+				moderateRainShowers: "Moderate showers",
+				violentRainShowers: "Violent showers",
+				slightSnowShowers: "Snow showers",
+				heavySnowShowers: "Heavy snow showers",
+				thunderstorm: "Thunderstorm",
+				thunderstormHail: "Storm with hail",
+			};
+---
+
+<WidgetLayout
+	name={texts.title}
+	id="visitor-info-widget"
+	class={className}
+	style={style}
+>
+	<div slot="title-icon" class="ml-2 text-[var(--primary)] text-lg">
+		<Icon name="material-symbols:travel-explore-outline-rounded" />
+	</div>
+
+	<div data-visitor-card class="flex flex-col gap-1">
+		<div class="flex items-center justify-center gap-3 px-2 py-2 text-center">
+			<div
+				class="relative w-10 h-7 shrink-0 overflow-hidden rounded-sm bg-neutral-100 dark:bg-neutral-800 ring-1 ring-black/5 dark:ring-white/10"
+				aria-hidden="true"
+			>
+				<img
+					data-visitor-flag-image
+					src=""
+					alt=""
+					class="hidden absolute inset-0 z-10 w-full h-full object-cover"
+					decoding="async"
+					referrerpolicy="no-referrer"
+				/>
+				<div
+					data-visitor-flag-fallback
+					class="absolute inset-0 z-0 flex items-center justify-center text-base leading-none select-none"
+				>
+					🌍
+				</div>
+			</div>
+			<div class="min-w-0">
+				<div
+					data-visitor-location
+					class="text-base font-bold text-neutral-900 dark:text-neutral-100 text-center"
+				>
+					{texts.locating}
+				</div>
+			</div>
+		</div>
+
+		<div class="flex items-center justify-center gap-2.5 px-2 py-2">
+			<span
+				data-visitor-time
+				class="text-2xl md:text-[1.8rem] font-bold tracking-[0.08em] text-neutral-900 dark:text-neutral-100 text-center"
+			>
+				--:--:--
+			</span>
+		</div>
+
+		<div class="flex items-center justify-center gap-3 px-2 py-2 text-center">
+			<div
+				data-visitor-weather-icon
+				class="text-xl leading-none shrink-0 select-none"
+				aria-hidden="true"
+			>
+				☁️
+			</div>
+			<span
+				data-visitor-weather
+				class="text-sm font-medium text-neutral-700 dark:text-neutral-300 text-center"
+			>
+				{texts.loadingWeather}
+			</span>
+		</div>
+	</div>
+</WidgetLayout>
+
+<script is:inline define:vars={{ texts }}>
+	(() => {
+		const cacheKey = "visitor-info-widget-cache-v2";
+		const cacheTtlMs = 10 * 60 * 1000;
+		const weatherRefreshMs = 10 * 60 * 1000;
+
+		function getFlagImageUrls(countryCode) {
+			if (!countryCode || countryCode.length !== 2) {
+				return [];
+			}
+			const code = countryCode.toLowerCase();
+			return [
+				`https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/flags/4x3/${code}.svg`,
+				`https://unpkg.com/flag-icons@7.2.3/flags/4x3/${code}.svg`,
+				`https://flagcdn.com/w160/${code}.png`,
+				`https://hatscripts.github.io/circle-flags/flags/${code}.svg`,
+			];
+		}
+
+		function formatLocation(location) {
+			const primary =
+				location.city ||
+				location.region ||
+				location.countryName ||
+				texts.unknownLocation;
+			const showCountry =
+				location.countryName &&
+				location.countryName !== primary &&
+				location.city;
+			return showCountry ? `${primary}, ${location.countryName}` : primary;
+		}
+
+		function getWeatherMeta(code, isDay) {
+			switch (code) {
+				case 0:
+					return { icon: isDay ? "☀️" : "🌙", label: texts.clearSky };
+				case 1:
+					return { icon: isDay ? "🌤️" : "🌙", label: texts.mainlyClear };
+				case 2:
+					return {
+						icon: isDay ? "⛅" : "☁️",
+						label: texts.partlyCloudy,
+					};
+				case 3:
+					return { icon: "☁️", label: texts.overcast };
+				case 45:
+					return { icon: "🌫️", label: texts.fog };
+				case 48:
+					return { icon: "🌫️", label: texts.depositingRimeFog };
+				case 51:
+					return { icon: "🌦️", label: texts.lightDrizzle };
+				case 53:
+					return { icon: "🌦️", label: texts.moderateDrizzle };
+				case 55:
+					return { icon: "🌧️", label: texts.denseDrizzle };
+				case 56:
+					return { icon: "🧊", label: texts.lightFreezingDrizzle };
+				case 57:
+					return { icon: "🧊", label: texts.denseFreezingDrizzle };
+				case 61:
+					return { icon: "🌦️", label: texts.slightRain };
+				case 63:
+					return { icon: "🌧️", label: texts.moderateRain };
+				case 65:
+					return { icon: "🌧️", label: texts.heavyRain };
+				case 66:
+					return { icon: "🧊", label: texts.lightFreezingRain };
+				case 67:
+					return { icon: "🧊", label: texts.heavyFreezingRain };
+				case 71:
+					return { icon: "🌨️", label: texts.slightSnow };
+				case 73:
+					return { icon: "🌨️", label: texts.moderateSnow };
+				case 75:
+					return { icon: "❄️", label: texts.heavySnow };
+				case 77:
+					return { icon: "❄️", label: texts.snowGrains };
+				case 80:
+					return { icon: "🌦️", label: texts.slightRainShowers };
+				case 81:
+					return { icon: "🌧️", label: texts.moderateRainShowers };
+				case 82:
+					return { icon: "⛈️", label: texts.violentRainShowers };
+				case 85:
+					return { icon: "🌨️", label: texts.slightSnowShowers };
+				case 86:
+					return { icon: "❄️", label: texts.heavySnowShowers };
+				case 95:
+					return { icon: "⛈️", label: texts.thunderstorm };
+				case 96:
+				case 99:
+					return { icon: "⛈️", label: texts.thunderstormHail };
+				default:
+					return { icon: "☁️", label: texts.weatherUnavailable };
+			}
+		}
+
+		function readCache() {
+			try {
+				const raw = sessionStorage.getItem(cacheKey);
+				if (!raw) {
+					return null;
+				}
+
+				const parsed = JSON.parse(raw);
+				if (
+					!parsed ||
+					typeof parsed.fetchedAt !== "number" ||
+					Date.now() - parsed.fetchedAt > cacheTtlMs
+				) {
+					return null;
+				}
+
+				return parsed;
+			} catch (_error) {
+				return null;
+			}
+		}
+
+		function saveCache(payload) {
+			try {
+				sessionStorage.setItem(cacheKey, JSON.stringify(payload));
+			} catch (_error) {
+				// Ignore storage errors.
+			}
+		}
+
+		function getClockText(timeZone) {
+			try {
+				return new Intl.DateTimeFormat([], {
+					hour: "2-digit",
+					minute: "2-digit",
+					second: "2-digit",
+					hour12: false,
+					timeZone,
+				}).format(new Date());
+			} catch (_error) {
+				return new Intl.DateTimeFormat([], {
+					hour: "2-digit",
+					minute: "2-digit",
+					second: "2-digit",
+					hour12: false,
+				}).format(new Date());
+			}
+		}
+
+		function updateTime(card, timeZone) {
+			const timeElement = card.querySelector("[data-visitor-time]");
+			if (timeElement) {
+				timeElement.textContent = getClockText(timeZone);
+			}
+		}
+
+		function startClock(card, timeZone) {
+			if (card.__visitorClock) {
+				clearInterval(card.__visitorClock);
+			}
+
+			updateTime(card, timeZone);
+			card.__visitorClock = window.setInterval(() => {
+				if (!document.body.contains(card)) {
+					clearInterval(card.__visitorClock);
+					return;
+				}
+				updateTime(card, timeZone);
+			}, 1000);
+		}
+
+		function renderLocation(card, location) {
+			const flagImageElement = card.querySelector(
+				"[data-visitor-flag-image]",
+			);
+			const flagFallbackElement = card.querySelector(
+				"[data-visitor-flag-fallback]",
+			);
+			const locationElement = card.querySelector("[data-visitor-location]");
+
+			if (flagFallbackElement) {
+				flagFallbackElement.textContent = "🌍";
+				flagFallbackElement.classList.remove("hidden");
+			}
+			if (flagImageElement) {
+				const flagUrls = getFlagImageUrls(location.countryCode);
+				if (flagUrls.length > 0) {
+					let urlIndex = 0;
+					let timeoutId = null;
+					flagImageElement.classList.add("hidden");
+					const clearTimer = () => {
+						if (timeoutId !== null) {
+							clearTimeout(timeoutId);
+							timeoutId = null;
+						}
+					};
+					const tryNext = () => {
+						clearTimer();
+						if (urlIndex >= flagUrls.length) {
+							console.warn(
+								"[VisitorInfo] All flag CDNs failed for",
+								location.countryCode,
+							);
+							flagImageElement.classList.add("hidden");
+							flagFallbackElement?.classList.remove("hidden");
+							return;
+						}
+						const url = flagUrls[urlIndex++];
+						console.log("[VisitorInfo] Loading flag:", url);
+						timeoutId = setTimeout(() => {
+							console.warn("[VisitorInfo] Flag CDN timeout:", url);
+							tryNext();
+						}, 10000);
+						flagImageElement.src = url;
+					};
+					flagImageElement.onload = () => {
+						clearTimer();
+						console.log("[VisitorInfo] Flag loaded OK:", flagImageElement.src);
+						flagImageElement.classList.remove("hidden");
+						flagFallbackElement?.classList.add("hidden");
+					};
+					flagImageElement.onerror = () => {
+						console.warn(
+							"[VisitorInfo] Flag CDN failed:",
+							flagImageElement.src,
+						);
+						tryNext();
+					};
+					tryNext();
+				} else {
+					flagImageElement.removeAttribute("src");
+					flagImageElement.classList.add("hidden");
+					flagFallbackElement?.classList.remove("hidden");
+				}
+			}
+			if (locationElement) {
+				locationElement.textContent = formatLocation(location);
+			}
+		}
+
+		function renderWeather(card, weather) {
+			const weatherIconElement = card.querySelector(
+				"[data-visitor-weather-icon]",
+			);
+			const weatherElement = card.querySelector("[data-visitor-weather]");
+
+			if (!weather) {
+				if (weatherIconElement) {
+					weatherIconElement.textContent = "☁️";
+				}
+				if (weatherElement) {
+					weatherElement.textContent = texts.weatherUnavailable;
+				}
+				return;
+			}
+
+			const meta = getWeatherMeta(weather.weatherCode, weather.isDay);
+			if (weatherIconElement) {
+				weatherIconElement.textContent = meta.icon;
+			}
+			if (weatherElement) {
+				const roundedTemperature = Math.round(weather.temperature);
+				weatherElement.textContent = `${meta.label} ${roundedTemperature}°C`;
+			}
+		}
+
+		async function fetchLocation() {
+			const response = await fetch("https://ipapi.co/json/");
+			if (!response.ok) {
+				throw new Error(`IP lookup failed with status ${response.status}`);
+			}
+
+			const data = await response.json();
+			return {
+				city: data.city || "",
+				region: data.region || "",
+				countryCode: data.country_code || "",
+				countryName: data.country_name || "",
+				timeZone:
+					data.timezone ||
+					Intl.DateTimeFormat().resolvedOptions().timeZone ||
+					"UTC",
+				latitude: Number(data.latitude),
+				longitude: Number(data.longitude),
+			};
+		}
+
+		async function fetchWeather(latitude, longitude) {
+			if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+				return null;
+			}
+
+			const url = new URL("https://api.open-meteo.com/v1/forecast");
+			url.searchParams.set("latitude", String(latitude));
+			url.searchParams.set("longitude", String(longitude));
+			url.searchParams.set("current", "temperature_2m,weather_code,is_day");
+			url.searchParams.set("temperature_unit", "celsius");
+			url.searchParams.set("forecast_days", "1");
+
+			const response = await fetch(url.toString());
+			if (!response.ok) {
+				throw new Error(
+					`Weather lookup failed with status ${response.status}`,
+				);
+			}
+
+			const data = await response.json();
+			if (!data.current) {
+				return null;
+			}
+
+			return {
+				temperature: Number(data.current.temperature_2m),
+				weatherCode: Number(data.current.weather_code),
+				isDay: Boolean(data.current.is_day),
+			};
+		}
+
+		async function refreshWeather(card, location) {
+			try {
+				const weather = await fetchWeather(
+					location.latitude,
+					location.longitude,
+				);
+				renderWeather(card, weather);
+				saveCache({
+					fetchedAt: Date.now(),
+					location,
+					weather,
+				});
+			} catch (error) {
+				console.error("Failed to refresh weather widget:", error);
+				renderWeather(card, null);
+			}
+		}
+
+		function startWeatherRefresh(card, location) {
+			if (card.__visitorWeatherTimer) {
+				clearInterval(card.__visitorWeatherTimer);
+			}
+
+			card.__visitorWeatherTimer = window.setInterval(() => {
+				if (!document.body.contains(card)) {
+					clearInterval(card.__visitorWeatherTimer);
+					return;
+				}
+				refreshWeather(card, location);
+			}, weatherRefreshMs);
+		}
+
+		async function loadCardData(card) {
+			const cached = readCache();
+			if (cached?.location) {
+				renderLocation(card, cached.location);
+				startClock(card, cached.location.timeZone);
+				renderWeather(card, cached.weather || null);
+				startWeatherRefresh(card, cached.location);
+				if (!cached.weather) {
+					refreshWeather(card, cached.location);
+				}
+				return;
+			}
+
+			try {
+				const location = await fetchLocation();
+				renderLocation(card, location);
+				startClock(card, location.timeZone);
+
+				let weather = null;
+				try {
+					weather = await fetchWeather(location.latitude, location.longitude);
+				} catch (error) {
+					console.error("Failed to load weather widget:", error);
+				}
+
+				renderWeather(card, weather);
+				startWeatherRefresh(card, location);
+				if (weather) {
+					saveCache({
+						fetchedAt: Date.now(),
+						location,
+						weather,
+					});
+				} else {
+					saveCache({
+						fetchedAt: Date.now() - cacheTtlMs + 60 * 1000,
+						location,
+						weather: null,
+					});
+				}
+			} catch (error) {
+				console.error("Failed to load visitor widget:", error);
+
+				renderLocation(card, {
+					city: "",
+					region: "",
+					countryCode: "",
+					countryName: texts.unknownLocation,
+					timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+				});
+				startClock(
+					card,
+					Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+				);
+				renderWeather(card, null);
+			}
+		}
+
+		function initVisitorInfoCards() {
+			document.querySelectorAll("[data-visitor-card]").forEach((card) => {
+				loadCardData(card);
+			});
+		}
+
+		if (!window.__visitorInfoCardBound) {
+			window.__visitorInfoCardBound = true;
+			document.addEventListener("astro:page-load", initVisitorInfoCards);
+			document.addEventListener("swup:contentReplaced", initVisitorInfoCards);
+		}
+
+		if (document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", initVisitorInfoCards, {
+				once: true,
+			});
+		} else {
+			initVisitorInfoCards();
+		}
+	})();
+</script>

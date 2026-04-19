@@ -1,0 +1,24 @@
+---
+export const prerender = false;
+import SettingsEditor from "../../components/admin/SettingsEditor.svelte";
+import { readSpecMarkdown } from "../../lib/content-sync/spec";
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { getSiteSettings } from "../../lib/repositories/site-settings";
+
+const settings = getSiteSettings();
+let aboutSiteContent = "";
+
+try {
+	aboutSiteContent = readSpecMarkdown("about-site");
+} catch (error) {
+	console.error("Failed to load about site page content for admin editor:", error);
+}
+---
+
+<AdminLayout title="Settings">
+	<SettingsEditor
+		client:only="svelte"
+		settings={settings}
+		aboutSiteContent={aboutSiteContent}
+	/>
+</AdminLayout>

@@ -60,6 +60,14 @@ echo "[rebuild] start at $(date '+%F %T')"
 echo "[rebuild] project root: ${PROJECT_ROOT}"
 echo "[rebuild] state file: ${STATE_PATH}"
 
+# pnpm occasionally extracts native binaries without the executable bit
+# (seen with @pagefind/linux-arm64 on Baota servers). Make sure anything
+# under node_modules .../bin/ can actually run.
+if [[ -d node_modules ]]; then
+	echo "[rebuild] ensuring executable bits on node_modules binaries..."
+	find node_modules -type f \( -path '*/.bin/*' -o -path '*/bin/pagefind*' -o -path '*/bin/esbuild*' \) -exec chmod +x {} + 2>/dev/null || true
+fi
+
 if [[ -n "${MIZUKI_BUILD_CMD:-}" ]]; then
 	echo "[rebuild] running custom build command: ${MIZUKI_BUILD_CMD}"
 	bash -c "${MIZUKI_BUILD_CMD}"

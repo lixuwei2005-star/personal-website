@@ -144,19 +144,28 @@ export async function getFootprintRegions(
 		return [];
 	}
 
-	const payload = await fetchJson<CountriesNowResponse>(
-		COUNTRIES_NOW_STATES_ENDPOINT,
-		{
-			method: "POST",
-			headers: {
-				...REQUEST_HEADERS,
-				"Content-Type": "application/json",
+	// countriesnow.space 对港澳台、梵蒂冈等"非典型国家"常常返回 error:true 或非 2xx
+	// 状态。遇到这种情况不要直接让整个 options API 崩掉，而是 fallback 到用国家名本身
+	// 作为唯一可选政区。
+	let states: CountriesNowState[] = [];
+	try {
+		const payload = await fetchJson<CountriesNowResponse>(
+			COUNTRIES_NOW_STATES_ENDPOINT,
+			{
+				method: "POST",
+				headers: {
+					...REQUEST_HEADERS,
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ country: country.name }),
 			},
-			body: JSON.stringify({ country: country.name }),
-		},
-	);
-
-	const states = Array.isArray(payload.data?.states) ? payload.data.states : [];
+		);
+		if (!payload.error && Array.isArray(payload.data?.states)) {
+			states = payload.data.states;
+		}
+	} catch {
+		// 远端服务挂了或不认识这个国家，下面的空 states 会触发兜底
+	}
 	const normalizedRegions = states
 		.map((state) => {
 			const name = String(state.name ?? "").trim();

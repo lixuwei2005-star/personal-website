@@ -150,6 +150,38 @@ function syncPostToContent(post) {
 	const targetFile = resolveTargetPostFile(post.slug);
 	mkdirSync(path.dirname(targetFile), { recursive: true });
 	writeFileSync(targetFile, serializePostToMarkdown(post), "utf-8");
+	return targetFile;
+}
+
+function collectPostFiles(directory) {
+	if (!existsSync(directory)) {
+		return [];
+	}
+	const results = [];
+	for (const entry of readdirSync(directory, { withFileTypes: true })) {
+		const entryPath = path.join(directory, entry.name);
+		if (entry.isDirectory()) {
+			results.push(...collectPostFiles(entryPath));
+		} else if (
+			entry.isFile() &&
+			FILE_EXTENSIONS.includes(path.extname(entry.name).toLowerCase())
+		) {
+			results.push(entryPath);
+		}
+	}
+	return results;
+}
+
+function prunePostFiles(keepFiles) {
+	const keepSet = new Set(keepFiles.map((file) => path.resolve(file)));
+	const existing = collectPostFiles(POSTS_DIR);
+	for (const file of existing) {
+		if (keepSet.has(path.resolve(file))) {
+			continue;
+		}
+		rmSync(file, { force: true });
+		cleanupEmptyDirectories(path.dirname(file));
+	}
 }
 
 if (!existsSync(DB_PATH)) {
@@ -198,8 +230,9 @@ const rows = db.prepare(`
 `).all();
 
 let syncedCount = 0;
+const writtenFiles = [];
 for (const row of rows) {
-	syncPostToContent({
+	const writtenFile = syncPostToContent({
 		...row,
 		draft: row.draft === 1,
 		pinned: row.pinned === 1,
@@ -213,8 +246,15 @@ for (const row of rows) {
 			}
 		})(),
 	});
+	writtenFiles.push(writtenFile);
 	syncedCount += 1;
 }
+
+// Delete .md/.mdx files that no longer correspond to a post in the DB.
+// Without this, posts removed via the admin panel can "come back" if the
+// filesystem still holds stale files (e.g. reintroduced by a `git pull` that
+// undid a working-tree deletion, or left over from a previous build).
+prunePostFiles(writtenFiles);
 
 db.close();
 console.log(`[sync-db-posts] Synced ${syncedCount} posts to src/content/posts.`);

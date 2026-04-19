@@ -68,3 +68,9 @@ data/rebuild.log
 
 # Upload files
 public/uploads/
+
+# Admin-managed post content (source of truth is data/site.db; .md files are
+# regenerated from the DB by scripts/sync-db-posts.mjs during prebuild).
+# Tracking them in git makes `git pull` resurrect posts the admin deleted.
+src/content/posts/**/*.md
+src/content/posts/**/*.mdx

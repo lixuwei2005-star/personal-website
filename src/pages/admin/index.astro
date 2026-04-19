@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import AdminLayout from "../../layouts/AdminLayout.astro";
+import { readRebuildLogTail, readRebuildState } from "../../lib/admin/rebuild";
 import { getRecentAccessLogs } from "../../lib/repositories/access-logs";
 import { getAllDiary } from "../../lib/repositories/diary";
 import { getAllFriends } from "../../lib/repositories/friends";
@@ -13,6 +14,8 @@ const projects = getAllProjects();
 const friends = getAllFriends();
 const diary = getAllDiary();
 const accessLogs = getRecentAccessLogs(30);
+const initialRebuildState = readRebuildState();
+const initialRebuildLog = readRebuildLogTail(80);
 
 function formatVisitedAt(value: string) {
 	const date = new Date(value);
@@ -74,6 +77,58 @@ function formatLocation(log: (typeof accessLogs)[number]) {
 	</div>
 
 	<div class="dashboard-panels">
+		<section class="panel-card rebuild-card" data-rebuild-card>
+			<div class="panel-header">
+				<div>
+					<h3 data-admin-i18n-literal="Rebuild Site">重建站点</h3>
+					<p
+						class="panel-subtitle"
+						data-admin-i18n-literal="Regenerate the public site with the latest database content. Runs on the server and hot-reloads PM2 — takes about a minute."
+					>
+						将后台最新内容重新构建到前台。服务器上执行并热重启 PM2，约需 1 分钟。
+					</p>
+				</div>
+				<button
+					id="rebuild-btn"
+					type="button"
+					class="primary-btn"
+					data-admin-i18n-literal="Rebuild Now"
+					data-initial-status={initialRebuildState.status}
+				>
+					立即重建
+				</button>
+			</div>
+			<div class="rebuild-status" data-rebuild-status data-status={initialRebuildState.status}>
+				<span class="rebuild-badge" data-rebuild-badge>
+					<span data-admin-i18n-key={`rebuild.status.${initialRebuildState.status}`}>
+						{initialRebuildState.status}
+					</span>
+				</span>
+				{initialRebuildState.startedAt && (
+					<span class="rebuild-meta">
+						<span data-admin-i18n-literal="Started">开始</span>:
+						<span data-rebuild-started>{initialRebuildState.startedAt}</span>
+					</span>
+				)}
+				{initialRebuildState.finishedAt && (
+					<span class="rebuild-meta">
+						<span data-admin-i18n-literal="Finished">结束</span>:
+						<span data-rebuild-finished>{initialRebuildState.finishedAt}</span>
+					</span>
+				)}
+				{initialRebuildState.triggeredBy && (
+					<span class="rebuild-meta">
+						<span data-admin-i18n-literal="Triggered by">触发者</span>:
+						<span data-rebuild-triggered>{initialRebuildState.triggeredBy}</span>
+					</span>
+				)}
+			</div>
+			<details class="rebuild-log-wrapper">
+				<summary data-admin-i18n-literal="Show build log">查看构建日志</summary>
+				<pre class="rebuild-log" data-rebuild-log>{initialRebuildLog}</pre>
+			</details>
+		</section>
+
 		<section class="panel-card">
 			<div class="panel-header">
 				<h3 data-admin-i18n-literal="Recent Posts">最近文章</h3>
@@ -147,6 +202,153 @@ function formatLocation(log: (typeof accessLogs)[number]) {
 	</div>
 
 	<script is:inline>
+		(function setupRebuildControls() {
+			const rebuildBtn = document.getElementById("rebuild-btn");
+			const statusEl = document.querySelector("[data-rebuild-status]");
+			const badgeEl = document.querySelector("[data-rebuild-badge]");
+			const logEl = document.querySelector("[data-rebuild-log]");
+			if (!rebuildBtn || !statusEl || !badgeEl || !logEl) {
+				return;
+			}
+
+			const getLang = () =>
+				typeof window !== "undefined" &&
+				window.localStorage.getItem("adminLanguage") === "en"
+					? "en"
+					: "zh-CN";
+
+			const STATUS_TEXT = {
+				"zh-CN": {
+					idle: "空闲",
+					running: "正在重建",
+					succeeded: "最近一次成功",
+					failed: "最近一次失败",
+				},
+				en: {
+					idle: "Idle",
+					running: "Running",
+					succeeded: "Last run succeeded",
+					failed: "Last run failed",
+				},
+			};
+
+			const ACTION_TEXT = {
+				"zh-CN": {
+					trigger: "立即重建",
+					running: "重建中...",
+					confirm: "确认开始重建站点吗？此过程大约需要 1 分钟。",
+					networkError: "重建请求失败，请稍后再试",
+					triggered: "重建已开始",
+				},
+				en: {
+					trigger: "Rebuild Now",
+					running: "Rebuilding...",
+					confirm: "Rebuild the site now? This takes about a minute.",
+					networkError: "Rebuild request failed, please try again later",
+					triggered: "Rebuild started",
+				},
+			};
+
+			let pollTimer = null;
+
+			function applyState(state, logText) {
+				const lang = getLang();
+				const status = state?.status || "idle";
+				statusEl.setAttribute("data-status", status);
+				badgeEl.textContent = STATUS_TEXT[lang][status] || status;
+
+				const setField = (selector, value) => {
+					const el = statusEl.querySelector(selector);
+					if (el) el.textContent = value || "";
+				};
+				setField("[data-rebuild-started]", state?.startedAt || "");
+				setField("[data-rebuild-finished]", state?.finishedAt || "");
+				setField("[data-rebuild-triggered]", state?.triggeredBy || "");
+
+				if (typeof logText === "string") {
+					logEl.textContent = logText;
+				}
+
+				if (status === "running") {
+					rebuildBtn.setAttribute("disabled", "true");
+					rebuildBtn.textContent = ACTION_TEXT[lang].running;
+				} else {
+					rebuildBtn.removeAttribute("disabled");
+					rebuildBtn.textContent = ACTION_TEXT[lang].trigger;
+				}
+			}
+
+			async function pollStatus() {
+				try {
+					const res = await fetch("/api/admin/rebuild/", {
+						method: "GET",
+						headers: { "Content-Type": "application/json" },
+					});
+					if (!res.ok) return;
+					const data = await res.json();
+					applyState(data.state, data.log);
+					if (data.state?.status !== "running" && pollTimer) {
+						clearInterval(pollTimer);
+						pollTimer = null;
+					}
+				} catch (_error) {
+					// swallow transient errors during pm2 reload window
+				}
+			}
+
+			function startPolling() {
+				if (pollTimer) return;
+				pollTimer = setInterval(pollStatus, 3000);
+			}
+
+			rebuildBtn.addEventListener("click", async () => {
+				const lang = getLang();
+				if (!window.confirm(ACTION_TEXT[lang].confirm)) {
+					return;
+				}
+
+				rebuildBtn.setAttribute("disabled", "true");
+				rebuildBtn.textContent = ACTION_TEXT[lang].running;
+
+				try {
+					const res = await fetch("/api/admin/rebuild/", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+					});
+					const data = await res.json().catch(() => ({}));
+
+					if (res.status === 409) {
+						applyState(data.state, data.log);
+						startPolling();
+						return;
+					}
+
+					if (!res.ok) {
+						window.alert(
+							(data && data.error) || ACTION_TEXT[lang].networkError,
+						);
+						rebuildBtn.removeAttribute("disabled");
+						rebuildBtn.textContent = ACTION_TEXT[lang].trigger;
+						return;
+					}
+
+					applyState(data.state);
+					startPolling();
+				} catch (_error) {
+					window.alert(ACTION_TEXT[lang].networkError);
+					rebuildBtn.removeAttribute("disabled");
+					rebuildBtn.textContent = ACTION_TEXT[lang].trigger;
+				}
+			});
+
+			// If the page was loaded while a rebuild is running, start polling
+			// immediately so the UI catches up with completion even without
+			// user interaction.
+			if (rebuildBtn.getAttribute("data-initial-status") === "running") {
+				startPolling();
+			}
+		})();
+
 		const clearAccessLogsButton = document.getElementById("clear-access-logs");
 
 		clearAccessLogsButton?.addEventListener("click", async () => {
@@ -346,6 +548,97 @@ function formatLocation(log: (typeof accessLogs)[number]) {
 		.danger-btn[disabled] {
 			opacity: 0.6;
 			cursor: not-allowed;
+		}
+
+		.primary-btn {
+			border: none;
+			border-radius: 10px;
+			background: #6366f1;
+			color: #fff;
+			padding: 10px 18px;
+			font-size: 13px;
+			font-weight: 700;
+			cursor: pointer;
+			transition: background 0.2s ease;
+			white-space: nowrap;
+		}
+
+		.primary-btn:hover:not([disabled]) {
+			background: #4f46e5;
+		}
+
+		.primary-btn[disabled] {
+			opacity: 0.6;
+			cursor: not-allowed;
+		}
+
+		.rebuild-status {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 14px;
+			align-items: center;
+			margin-top: 8px;
+			font-size: 13px;
+			color: #4b5563;
+		}
+
+		.rebuild-badge {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			padding: 4px 10px;
+			border-radius: 999px;
+			font-size: 12px;
+			font-weight: 700;
+			background: #e5e7eb;
+			color: #374151;
+		}
+
+		[data-status="running"] .rebuild-badge {
+			background: #dbeafe;
+			color: #1d4ed8;
+		}
+		[data-status="succeeded"] .rebuild-badge {
+			background: #dcfce7;
+			color: #166534;
+		}
+		[data-status="failed"] .rebuild-badge {
+			background: #fee2e2;
+			color: #b91c1c;
+		}
+
+		.rebuild-meta {
+			display: inline-flex;
+			gap: 4px;
+			color: #6b7280;
+		}
+
+		.rebuild-log-wrapper {
+			margin-top: 14px;
+		}
+
+		.rebuild-log-wrapper summary {
+			cursor: pointer;
+			font-size: 13px;
+			color: #4b5563;
+			user-select: none;
+		}
+
+		.rebuild-log {
+			margin-top: 10px;
+			padding: 12px;
+			background: #0f172a;
+			color: #e2e8f0;
+			border-radius: 8px;
+			font-family:
+				ui-monospace, SFMono-Regular, Menlo, Consolas,
+				"Liberation Mono", monospace;
+			font-size: 12px;
+			line-height: 1.5;
+			max-height: 320px;
+			overflow: auto;
+			white-space: pre-wrap;
+			word-break: break-word;
 		}
 
 		.empty {

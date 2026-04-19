@@ -635,6 +635,16 @@ const literalTranslationOverrides: Record<string, TranslationEntry> = {
 	Longitude: { "zh-CN": "经度", en: "Longitude" },
 	"Visited Date": { "zh-CN": "到访日期", en: "Visited Date" },
 	Notes: { "zh-CN": "备注", en: "Notes" },
+	"Rebuild Site": { "zh-CN": "重建站点", en: "Rebuild Site" },
+	"Rebuild Now": { "zh-CN": "立即重建", en: "Rebuild Now" },
+	"Regenerate the public site with the latest database content. Runs on the server and hot-reloads PM2 — takes about a minute.": {
+		"zh-CN": "将后台最新内容重新构建到前台。服务器上执行并热重启 PM2，约需 1 分钟。",
+		en: "Regenerate the public site with the latest database content. Runs on the server and hot-reloads PM2 — takes about a minute.",
+	},
+	"Show build log": { "zh-CN": "查看构建日志", en: "Show build log" },
+	Started: { "zh-CN": "开始", en: "Started" },
+	Finished: { "zh-CN": "结束", en: "Finished" },
+	"Triggered by": { "zh-CN": "触发者", en: "Triggered by" },
 };
 
 const mergedLiteralTranslations: Record<string, TranslationEntry> = {
@@ -652,6 +662,10 @@ const keyTranslations: Record<string, TranslationEntry> = {
 		"zh-CN": "连续输错 5 次后已被锁定，请在 {time} 后重试",
 		en: "Too many failed login attempts. Try again in {time}.",
 	},
+	"rebuild.status.idle": { "zh-CN": "空闲", en: "Idle" },
+	"rebuild.status.running": { "zh-CN": "正在重建", en: "Running" },
+	"rebuild.status.succeeded": { "zh-CN": "最近一次成功", en: "Last run succeeded" },
+	"rebuild.status.failed": { "zh-CN": "最近一次失败", en: "Last run failed" },
 };
 
 function normalizeAdminLanguage(value: string | null | undefined): AdminLanguage {

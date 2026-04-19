@@ -62,5 +62,9 @@ data/site.db
 data/*.db-shm
 data/*.db-wal
 
+# Rebuild runtime state (written by /api/admin/rebuild)
+data/rebuild.state.json
+data/rebuild.log
+
 # Upload files
 public/uploads/

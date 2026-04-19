@@ -382,10 +382,22 @@ export class SwupHooksManager {
 	 * 解决从首页进入文章页面时代码块渲染问题
 	 */
 	private syncThemeState(): void {
-		const storedTheme =
-			localStorage.getItem(THEME_CONFIG.themeStorageKey) ||
-			THEME_CONFIG.lightMode;
-		const isDark = storedTheme === THEME_CONFIG.darkMode;
+		// Read from sessionStorage to match the pre-render script in
+		// HeadTags.astro (manual toggles are session-scoped). Fall back to the
+		// browser's prefers-color-scheme so SPA navigation does not force light
+		// mode when the user has not explicitly toggled the theme.
+		const sessionTheme = sessionStorage.getItem(
+			THEME_CONFIG.themeStorageKey,
+		);
+		const prefersDark =
+			typeof window.matchMedia === "function" &&
+			window.matchMedia("(prefers-color-scheme: dark)").matches;
+		const isDark =
+			sessionTheme === THEME_CONFIG.darkMode
+				? true
+				: sessionTheme === THEME_CONFIG.lightMode
+					? false
+					: prefersDark;
 		const expectedTheme = isDark
 			? THEME_CONFIG.darkExpressiveTheme
 			: THEME_CONFIG.lightExpressiveTheme;

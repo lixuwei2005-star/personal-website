@@ -114,7 +114,6 @@ const favicons: Favicon[] =
 	let theme = DEFAULT_THEME;
 	try {
 		const sessionTheme = sessionStorage.getItem("theme");
-		localStorage.removeItem("theme");
 		if (sessionTheme === LIGHT_MODE || sessionTheme === DARK_MODE) {
 			theme = sessionTheme;
 		} else if (

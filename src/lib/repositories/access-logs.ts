@@ -263,7 +263,14 @@ function upsertGeoCache(ip: string, geo: GeoSnapshot): void {
 	);
 }
 
-async function fetchGeoFromIpApi(ip: string): Promise<GeoSnapshot | null> {
+function hasUsefulGeo(geo: GeoSnapshot | null): boolean {
+	if (!geo) return false;
+	return Boolean(geo.countryCode || geo.countryName || geo.region || geo.city);
+}
+
+async function fetchJsonWithTimeout(
+	url: string,
+): Promise<Record<string, unknown> | null> {
 	const controller = new AbortController();
 	const timeout = setTimeout(
 		() => controller.abort(),
@@ -271,36 +278,55 @@ async function fetchGeoFromIpApi(ip: string): Promise<GeoSnapshot | null> {
 	);
 
 	try {
-		const response = await fetch(
-			`https://ipapi.co/${encodeURIComponent(ip)}/json/`,
-			{
-				headers: {
-					Accept: "application/json",
-				},
-				signal: controller.signal,
-			},
-		);
-
-		if (!response.ok) {
-			return null;
-		}
-
-		const data = (await response.json()) as Record<string, unknown>;
-		if (data.error === true || data.reserved === true) {
-			return null;
-		}
-
-		return {
-			countryCode: String(data.country_code || "").toUpperCase(),
-			countryName: String(data.country_name || ""),
-			region: String(data.region || ""),
-			city: String(data.city || ""),
-		};
+		const response = await fetch(url, {
+			headers: { Accept: "application/json" },
+			signal: controller.signal,
+		});
+		if (!response.ok) return null;
+		return (await response.json()) as Record<string, unknown>;
 	} catch {
 		return null;
 	} finally {
 		clearTimeout(timeout);
 	}
+}
+
+async function fetchGeoFromIpapiCo(ip: string): Promise<GeoSnapshot | null> {
+	const data = await fetchJsonWithTimeout(
+		`https://ipapi.co/${encodeURIComponent(ip)}/json/`,
+	);
+	if (!data || data.error === true || data.reserved === true) return null;
+
+	return {
+		countryCode: String(data.country_code || "").toUpperCase(),
+		countryName: String(data.country_name || ""),
+		region: String(data.region || ""),
+		city: String(data.city || ""),
+	};
+}
+
+async function fetchGeoFromIpwhois(ip: string): Promise<GeoSnapshot | null> {
+	const data = await fetchJsonWithTimeout(
+		`https://ipwho.is/${encodeURIComponent(ip)}?fields=success,country_code,country,region,city`,
+	);
+	if (!data || data.success === false) return null;
+
+	return {
+		countryCode: String(data.country_code || "").toUpperCase(),
+		countryName: String(data.country || ""),
+		region: String(data.region || ""),
+		city: String(data.city || ""),
+	};
+}
+
+async function fetchGeoFromIpApi(ip: string): Promise<GeoSnapshot | null> {
+	const primary = await fetchGeoFromIpapiCo(ip);
+	if (hasUsefulGeo(primary)) return primary;
+
+	const fallback = await fetchGeoFromIpwhois(ip);
+	if (hasUsefulGeo(fallback)) return fallback;
+
+	return primary ?? fallback;
 }
 
 function updateAccessLogGeo(logId: number, geo: GeoSnapshot): void {

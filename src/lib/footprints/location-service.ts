@@ -220,28 +220,42 @@ export async function resolveFootprintLocation(
 	}
 	const countryCode = country.code.toLowerCase();
 
-	let coordinates =
-		parseCoordinates(
-			await searchNominatim({
-				country: country.name,
-				state: normalizedProvince,
-				countrycodes: countryCode,
-			}),
-		) ??
-		parseCoordinates(
-			await searchNominatim({
-				q: `${normalizedProvince}, ${country.name}`,
-				countrycodes: countryCode,
-			}),
-		);
+	async function tryLookup(
+		params: Record<string, string>,
+	): Promise<{ latitude: number; longitude: number } | null> {
+		try {
+			return parseCoordinates(await searchNominatim(params));
+		} catch {
+			return null;
+		}
+	}
 
+	let coordinates =
+		(await tryLookup({
+			country: country.name,
+			state: normalizedProvince,
+			countrycodes: countryCode,
+		})) ??
+		(await tryLookup({
+			q: `${normalizedProvince}, ${country.name}`,
+			countrycodes: countryCode,
+		})) ??
+		(await tryLookup({
+			q: `${normalizedProvince} ${country.name}`,
+			countrycodes: countryCode,
+		}));
+
+	// 如果 province == country 或者省份搜索都没命中，退化为直接搜国家中心点,
+	// 避免港澳台这种"省=国"的场景整个保存失败。
 	if (!coordinates) {
-		coordinates = parseCoordinates(
-			await searchNominatim({
-				q: `${normalizedProvince} ${country.name}`,
+		coordinates =
+			(await tryLookup({
+				country: country.name,
 				countrycodes: countryCode,
-			}),
-		);
+			})) ??
+			(await tryLookup({
+				q: country.name,
+			}));
 	}
 
 	if (!coordinates) {

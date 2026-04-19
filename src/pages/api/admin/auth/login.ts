@@ -3,6 +3,23 @@ export const prerender = false;
 import type { APIRoute } from "astro";
 import { authenticateUser } from "../../../../lib/auth";
 
+function shouldUseSecureCookies(request: Request): boolean {
+	const forwardedProto = request.headers
+		.get("x-forwarded-proto")
+		?.split(",")[0]
+		?.trim()
+		?.toLowerCase();
+	if (forwardedProto) {
+		return forwardedProto === "https";
+	}
+
+	try {
+		return new URL(request.url).protocol === "https:";
+	} catch {
+		return false;
+	}
+}
+
 export const POST: APIRoute = async ({ request, cookies }) => {
 	const body = await request.json();
 	const { username, password } = body;
@@ -38,7 +55,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 	cookies.set("session", result.token, {
 		path: "/",
 		httpOnly: true,
-		secure: import.meta.env.PROD,
+		secure: shouldUseSecureCookies(request),
 		sameSite: "lax",
 		maxAge: 7 * 24 * 60 * 60,
 	});

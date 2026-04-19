@@ -6,11 +6,24 @@ function isForbiddenPageRoute(pathname: string): boolean {
 	return pathname === "/403.html" || pathname === "/403.html/";
 }
 
+function needsAdminSlashRedirect(pathname: string): boolean {
+	return (
+		pathname.startsWith("/admin") &&
+		!pathname.startsWith("/api/admin") &&
+		pathname !== "/admin/" &&
+		!pathname.endsWith("/")
+	);
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
 	const url = new URL(context.request.url);
 	const isAdminRoute = url.pathname.startsWith("/admin") || url.pathname.startsWith("/api/admin");
 	const isLoginRoute = url.pathname.startsWith("/admin/login");
 	const isLoginApi = url.pathname.startsWith("/api/admin/auth/login");
+
+	if (needsAdminSlashRedirect(url.pathname)) {
+		return context.redirect(`${url.pathname}/${url.search}`, 302);
+	}
 
 	if (!isAdminRoute) {
 		if (!isForbiddenPageRoute(url.pathname) && !isSiteEnabled()) {

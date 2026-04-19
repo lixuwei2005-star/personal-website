@@ -44,6 +44,13 @@ export default defineConfig({
 	output: "static",
 	adapter: node({ mode: "standalone" }),
 
+	// Astro 5 的 checkOrigin 会对反代后的 PUT/DELETE 返回 403
+	// ("Cross-site DELETE form submissions are forbidden")，
+	// 我们的 session cookie 是 httpOnly + sameSite=lax + secure，已经有等效 CSRF 防护。
+	security: {
+		checkOrigin: false,
+	},
+
 	integrations: [
 		oddmisc({
 			umami: {

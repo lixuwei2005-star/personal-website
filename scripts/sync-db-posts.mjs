@@ -84,6 +84,14 @@ function yamlDate(value) {
 	return parsed.toISOString().slice(0, 10);
 }
 
+function yamlDateTime(value) {
+	const parsed = new Date(value);
+	if (Number.isNaN(parsed.getTime())) {
+		return yamlString(String(value));
+	}
+	return parsed.toISOString();
+}
+
 function pushField(lines, key, value) {
 	if (value === undefined || value === null || value === "") {
 		return;
@@ -110,7 +118,10 @@ function serializePostToMarkdown(post) {
 	];
 
 	if (post.updated) {
-		lines.push(`updated: ${yamlDate(post.updated)}`);
+		// Preserve the full timestamp (not just the date) so the frontend's
+		// "time since last edit" widget doesn't round the edit time to UTC
+		// midnight, which off-by-a-timezone on +08:00 clients.
+		lines.push(`updated: ${yamlDateTime(post.updated)}`);
 	}
 
 	lines.push(`draft: ${yamlBoolean(Boolean(post.draft))}`);

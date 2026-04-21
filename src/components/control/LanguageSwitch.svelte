@@ -55,12 +55,12 @@
 
 <button
 	aria-label={ariaLabel}
-	class="btn-plain scale-animation rounded-lg h-11 px-3 min-w-[3.75rem] active:scale-90 flex items-center justify-center gap-1 font-bold"
+	class="btn-plain scale-animation rounded-lg h-11 w-11 md:w-auto md:px-3 md:min-w-[3.75rem] active:scale-90 flex items-center justify-center md:gap-1 font-bold"
 	id="language-switch"
 	onclick={toggleLanguage}
 >
 	<Icon icon="material-symbols:translate-rounded" class="text-[1.1rem]" />
-	<span class="flex items-center gap-1 text-[0.78rem] leading-none">
+	<span class="hidden md:flex items-center gap-1 text-[0.78rem] leading-none">
 		<span class:active={currentLanguage === "zh_CN"}>中</span>
 		<span class="text-black/30 dark:text-white/30">/</span>
 		<span class:active={currentLanguage === "en"}>EN</span>

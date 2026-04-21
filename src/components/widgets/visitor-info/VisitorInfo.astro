@@ -15,7 +15,7 @@ const lang = siteConfig.lang || "en";
 
 const texts = lang.startsWith("zh")
 	? {
-			title: "所在地",
+			title: "位置",
 			locating: "定位中...",
 			unknownLocation: "未知位置",
 			loadingWeather: "天气加载中...",
@@ -364,6 +364,24 @@ const texts = lang.startsWith("zh")
 			);
 			const locationElement = card.querySelector("[data-visitor-location]");
 
+			if (locationElement) {
+				locationElement.textContent = formatLocation(location);
+			}
+
+			// Skip flag reload if the same country is already displayed — prevents
+			// the globe fallback from flashing back while the CDN re-fetches.
+			const sameCountry =
+				card.__visitorFlagCountry === location.countryCode &&
+				location.countryCode;
+			const flagAlreadyShown =
+				flagImageElement &&
+				!flagImageElement.classList.contains("hidden") &&
+				flagImageElement.getAttribute("src");
+			if (sameCountry && flagAlreadyShown) {
+				return;
+			}
+			card.__visitorFlagCountry = location.countryCode;
+
 			if (flagFallbackElement) {
 				flagFallbackElement.textContent = "🌍";
 				flagFallbackElement.classList.remove("hidden");
@@ -418,9 +436,6 @@ const texts = lang.startsWith("zh")
 					flagImageElement.classList.add("hidden");
 					flagFallbackElement?.classList.remove("hidden");
 				}
-			}
-			if (locationElement) {
-				locationElement.textContent = formatLocation(location);
 			}
 		}
 

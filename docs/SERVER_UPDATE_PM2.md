@@ -6,13 +6,16 @@ This project is designed to be updated on the server by keeping the full source 
 
 Do not delete or overwrite these paths during updates:
 
-- `data/site.db`
-- `public/uploads/`
+- `data/site.db` — admin content and settings stored in SQLite
+- `public/uploads/` — uploaded images, music, and other assets
+- `src/content/spec/about.md` — 关于我 page body (edited via admin panel)
+- `src/content/spec/about-site.md` — 关于本站 page body (edited via admin panel)
+- `public/images/albums/` — 相册 photos (uploaded via admin panel)
 
-They contain your runtime data:
-
-- admin content and settings stored in SQLite
-- uploaded images, music, and other assets
+The last three are now gitignored so `git pull` will no longer overwrite
+them. The update scripts also back them up before pulling and restore
+them afterward, which makes the very first deploy after this change safe
+even though that commit removes them from git tracking.
 
 ## Recommended update flow
 
@@ -59,11 +62,15 @@ powershell -ExecutionPolicy Bypass -File .\scripts\update-server.ps1
 The update scripts will:
 
 1. check that `git`, `node`, and `pm2` are available
-2. stop if tracked files have local changes
-3. pull the latest code with `git pull --ff-only`
-4. install dependencies with `pnpm` if `pnpm-lock.yaml` exists, otherwise `npm`
-5. run `npm run build`
-6. restart the PM2 app `mizuki`, or start it from `ecosystem.config.cjs` if it does not exist yet
+2. back up the runtime paths listed above to a temp directory
+3. reset any local git state for those runtime paths (so `git pull` can
+   cleanly apply a commit that removed them from tracking)
+4. stop if **other** tracked files still have local changes
+5. pull the latest code with `git pull --ff-only`
+6. restore the runtime paths from the backup (also runs on abort)
+7. install dependencies with `pnpm` if `pnpm-lock.yaml` exists, otherwise `npm`
+8. run `npm run build`
+9. restart the PM2 app `mizuki`, or start it from `ecosystem.config.cjs` if it does not exist yet
 
 ## Important note about tracked file changes
 

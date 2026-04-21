@@ -74,3 +74,15 @@ public/uploads/
 # Tracking them in git makes `git pull` resurrect posts the admin deleted.
 src/content/posts/**/*.md
 src/content/posts/**/*.mdx
+
+# Admin-managed runtime content (written by the admin panel on the server).
+# Tracking these in git would let `git pull` overwrite live edits on deploy.
+# 关于我 / About-me page body
+src/content/spec/about.md
+# 关于本站 / About-this-site page body
+src/content/spec/about-site.md
+# 相册 / Album photos uploaded via admin. Each album is its own subdirectory;
+# README.md stays tracked because it's a file (not matched by `*/`);
+# HiddenExample stays tracked as a repo example template.
+public/images/albums/*/
+!public/images/albums/HiddenExample/

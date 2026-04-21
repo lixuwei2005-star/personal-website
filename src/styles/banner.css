@@ -99,9 +99,15 @@ body.wallpaper-transparent #toc-inner-wrapper:has(table-of-contents[data-loaded=
 
   /* 修复双侧边栏模式在移动端的布局问题 */
   .mobile-both-sidebar {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
     padding-left: 0.5rem !important;
     padding-right: 0.5rem !important;
+  }
+
+  .mobile-both-sidebar > *,
+  .mobile-both-sidebar > .contents > * {
+    min-width: 0;
+    max-width: 100%;
   }
 
   .mobile-both-sidebar main {

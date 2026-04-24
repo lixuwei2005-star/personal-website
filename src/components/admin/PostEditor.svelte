@@ -413,7 +413,7 @@
 
 		<input
 			type="file"
-			accept="image/*"
+			accept="image/*,video/*"
 			multiple
 			bind:this={assetUploadInput}
 			onchange={handleAssetUpload}
@@ -430,11 +430,20 @@
 			<div class="asset-grid">
 				{#each assetFiles as asset}
 					<div class="asset-card">
-						<img
-							class="asset-preview"
-							src={getAdminImagePreviewUrl(asset.path)}
-							alt={asset.fileName}
-						/>
+						{#if /\.(mp4|webm|ogv|mov|m4v)$/i.test(asset.fileName)}
+							<video
+								class="asset-preview"
+								src={getAdminImagePreviewUrl(asset.path)}
+								controls
+								preload="metadata"
+							></video>
+						{:else}
+							<img
+								class="asset-preview"
+								src={getAdminImagePreviewUrl(asset.path)}
+								alt={asset.fileName}
+							/>
+						{/if}
 						<div class="asset-meta">
 							<code>{asset.path}</code>
 							<div class="asset-actions">

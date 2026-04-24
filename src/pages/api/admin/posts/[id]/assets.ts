@@ -19,15 +19,20 @@ const ALLOWED_EXTENSIONS = new Set([
 	".gif",
 	".svg",
 	".avif",
+	".mp4",
+	".webm",
+	".ogv",
+	".mov",
+	".m4v",
 ]);
 
-function isSupportedImageFile(file: File) {
+function isSupportedAssetFile(file: File) {
 	const extension = path.extname(file.name).toLowerCase();
 	if (ALLOWED_EXTENSIONS.has(extension)) {
 		return true;
 	}
 
-	return file.type.startsWith("image/");
+	return file.type.startsWith("image/") || file.type.startsWith("video/");
 }
 
 function getValidatedPostId(idParam: string | undefined) {
@@ -68,7 +73,7 @@ export const POST: APIRoute = async ({ params, request }) => {
 			.filter((value): value is File => value instanceof File);
 
 		if (files.length === 0) {
-			return new Response(JSON.stringify({ error: "No image files provided" }), {
+			return new Response(JSON.stringify({ error: "No files provided" }), {
 				status: 400,
 				headers: { "Content-Type": "application/json" },
 			});
@@ -76,9 +81,9 @@ export const POST: APIRoute = async ({ params, request }) => {
 
 		const uploadedAssets: PostAssetFile[] = [];
 		for (const file of files) {
-			if (!isSupportedImageFile(file)) {
+			if (!isSupportedAssetFile(file)) {
 				return new Response(
-					JSON.stringify({ error: "Only image uploads are supported" }),
+					JSON.stringify({ error: "Only image and video uploads are supported" }),
 					{
 						status: 400,
 						headers: { "Content-Type": "application/json" },

@@ -200,7 +200,7 @@ const extendedLiteralTranslations: Record<string, TranslationEntry> = {
 	"No image": { "zh-CN": "暂无图片", en: "No image" },
 	"No items": { "zh-CN": "暂无内容", en: "No items" },
 	"No local tracks yet": { "zh-CN": "还没有本地音频", en: "No local tracks yet" },
-	"No post images yet": { "zh-CN": "还没有文章图片", en: "No post images yet" },
+	"No post images yet": { "zh-CN": "还没有文章媒体", en: "No post media yet" },
 	"No posts found": { "zh-CN": "没有找到文章", en: "No posts found" },
 	"No posts yet": { "zh-CN": "还没有文章", en: "No posts yet" },
 	"No tags yet": { "zh-CN": "还没有标签", en: "No tags yet" },
@@ -344,7 +344,7 @@ const extendedLiteralTranslations: Record<string, TranslationEntry> = {
 		"zh-CN": "可以上传本地图片或填写移动端横幅的路径 / URL。留空时会复用桌面端图片。",
 		en: "Upload local images or paste a path/URL for mobile banners. Leave this list empty to reuse desktop images.",
 	},
-	"Upload Images": { "zh-CN": "上传图片", en: "Upload Images" },
+	"Upload Images": { "zh-CN": "上传媒体", en: "Upload Media" },
 	"Images uploaded! You can now preview, reorder or remove them before saving.": {
 		"zh-CN": "图片上传成功！现在可以在保存前预览、调整顺序或删除。",
 		en: "Images uploaded! You can now preview, reorder or remove them before saving.",
@@ -504,18 +504,18 @@ const extendedLiteralTranslations: Record<string, TranslationEntry> = {
 	},
 
 	"Are you sure you want to delete this post?": { "zh-CN": "确定要删除这篇文章吗？", en: "Are you sure you want to delete this post?" },
-	"Post Images": { "zh-CN": "文章图片", en: "Post Images" },
+	"Post Images": { "zh-CN": "文章媒体", en: "Post Media" },
 	"Save this post first to start managing content images.": {
-		"zh-CN": "请先保存这篇文章，再开始管理正文图片。",
-		en: "Save this post first to start managing content images.",
+		"zh-CN": "请先保存这篇文章，再开始管理正文媒体。",
+		en: "Save this post first to start managing content media.",
 	},
 	"Upload content images for this post, preview them here, then copy the path into your Markdown.": {
-		"zh-CN": "在这里上传这篇文章的正文图片、预览图片，然后复制路径插入到 Markdown 中。",
-		en: "Upload content images for this post, preview them here, then copy the path into your Markdown.",
+		"zh-CN": "在这里上传这篇文章的正文图片或视频、预览，然后复制路径插入到 Markdown 中。",
+		en: "Upload images or videos for this post, preview them here, then copy the path into your Markdown.",
 	},
 	"Post images uploaded. Copy the path below and insert it into your Markdown.": {
-		"zh-CN": "文章图片上传成功。复制下方路径并插入到 Markdown 中即可。",
-		en: "Post images uploaded. Copy the path below and insert it into your Markdown.",
+		"zh-CN": "媒体上传成功。复制下方路径并插入到 Markdown 中即可。",
+		en: "Media uploaded. Copy the path below and insert it into your Markdown.",
 	},
 	"Image path copied": { "zh-CN": "图片路径已复制", en: "Image path copied" },
 	"Failed to copy image path": { "zh-CN": "复制图片路径失败", en: "Failed to copy image path" },

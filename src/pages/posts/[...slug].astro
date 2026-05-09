@@ -84,6 +84,8 @@ const relatedPosts = relatedPostsConfig.enable
 
 // Process cover image for SharePoster
 let posterCoverUrl = entry.data.image;
+// og:image needs a publicly fetchable absolute URL (no data: URIs)
+let ogImageRaw: string | undefined;
 if (entry.data.image) {
 	const isLocal = !(
 		entry.data.image.startsWith("/") ||
@@ -103,8 +105,10 @@ if (entry.data.image) {
 		if (file) {
 			const img = await file();
 			posterCoverUrl = img.src;
+			ogImageRaw = img.src;
 		}
 	} else if (entry.data.image.startsWith("http")) {
+		ogImageRaw = entry.data.image;
 		try {
 			const response = await fetch(entry.data.image);
 			const arrayBuffer = await response.arrayBuffer();
@@ -115,6 +119,8 @@ if (entry.data.image) {
 		} catch {
 			posterCoverUrl = entry.data.image;
 		}
+	} else if (entry.data.image.startsWith("/")) {
+		ogImageRaw = entry.data.image;
 	}
 }
 
@@ -168,6 +174,7 @@ const jsonLd = {
 
 <MainGridLayout
 	banner={entry.data.image}
+	ogImage={ogImageRaw}
 	title={entry.data.title}
 	description={entry.data.description}
 	lang={entry.data.lang}

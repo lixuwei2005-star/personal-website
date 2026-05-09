@@ -75,6 +75,7 @@ const favicons: Favicon[] =
 <meta property="twitter:url" content={Astro.url} />
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={description || title} />
+{ogImageUrl && <meta property="twitter:image" content={ogImageUrl} />}
 
 <!-- Viewport and Generator -->
 <meta name="viewport" content="width=device-width" />

@@ -54,7 +54,7 @@ const page = {
 const len = page.data.length;
 ---
 
-<MainGridLayout>
+<MainGridLayout description={siteConfig.subtitle}>
 	{showCategoryBar && <CategoryBar />}
 	<PostPage page={page} />
 	<Pagination

@@ -1,4 +1,6 @@
 ---
+import path from "node:path";
+
 import ConfigCarrier from "@components/misc/ConfigCarrier.astro";
 import MusicPlayer from "@components/widgets/music-player/MusicPlayer.svelte";
 import Pio from "@components/features/pio/Pio.svelte"; // 使用 Svelte 版本的 Pio 组件
@@ -31,9 +33,10 @@ interface Props {
 	lang?: string;
 	setOGTypeArticle?: boolean;
 	postSlug?: string;
+	ogImage?: string;
 }
 
-let { title, banner, description, lang, setOGTypeArticle, postSlug } =
+let { title, banner, description, lang, setOGTypeArticle, postSlug, ogImage } =
 	Astro.props;
 
 // apply a class to the body element to decide the height of the banner, only used for initial page load
@@ -104,9 +107,52 @@ if (title) {
 		: siteConfig.title;
 }
 
+// Resolve avatar to a publicly fetchable URL — used as the og:image for non-article pages
+let resolvedAvatarUrl: string | undefined;
+if (profileConfig.avatar) {
+	const avatar = profileConfig.avatar;
+	if (avatar.startsWith("data:")) {
+		// skip — Telegram won't accept data: URIs
+	} else if (/^https?:\/\//i.test(avatar)) {
+		resolvedAvatarUrl = avatar;
+	} else if (avatar.startsWith("/uploads/")) {
+		resolvedAvatarUrl = `/api/image-preview/?path=${encodeURIComponent(avatar)}`;
+	} else if (avatar.startsWith("/")) {
+		resolvedAvatarUrl = avatar;
+	} else {
+		// src-relative path — let Astro's asset pipeline produce a hashed /_astro/... URL
+		const files = import.meta.glob<ImageMetadata>("../**", { import: "default" });
+		const normalizedPath = path
+			.normalize(path.join("../", avatar))
+			.replace(/\\/g, "/");
+		const file = files[normalizedPath];
+		if (file) {
+			const img = await file();
+			resolvedAvatarUrl = img.src;
+		}
+	}
+}
+
 let ogImageUrl: string | undefined;
 if (siteConfig.generateOgImages && postSlug) {
 	ogImageUrl = new URL(`/og/${postSlug}.png`, Astro.site).toString();
+}
+if (!ogImageUrl) {
+	// Posts pass an `ogImage` (cover) and win the chain. Non-posts leave it
+	// undefined and fall through to the avatar, then the banner as last resort.
+	const candidates = [ogImage, resolvedAvatarUrl, getDefaultBanner()];
+	for (const candidate of candidates) {
+		if (!candidate || candidate.startsWith("data:")) continue;
+		if (/^https?:\/\//i.test(candidate)) {
+			ogImageUrl = candidate;
+			break;
+		}
+		if (Astro.site) {
+			const p = candidate.startsWith("/") ? candidate : `/${candidate}`;
+			ogImageUrl = new URL(p, Astro.site).toString();
+			break;
+		}
+	}
 }
 
 // const siteLang = siteConfig.lang.replace('_', '-')

@@ -116,7 +116,8 @@ if (profileConfig.avatar) {
 	} else if (/^https?:\/\//i.test(avatar)) {
 		resolvedAvatarUrl = avatar;
 	} else if (avatar.startsWith("/uploads/")) {
-		resolvedAvatarUrl = `/api/image-preview/?path=${encodeURIComponent(avatar)}`;
+		// 这个值用作 OG/Telegram 卡片头像，社交平台一般展示 200-400px
+		resolvedAvatarUrl = `/api/image-preview/?path=${encodeURIComponent(avatar)}&w=400&format=webp&q=85`;
 	} else if (avatar.startsWith("/")) {
 		resolvedAvatarUrl = avatar;
 	} else {

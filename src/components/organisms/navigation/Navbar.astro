@@ -99,7 +99,8 @@ function resolveNavbarAssetSrc(assetPath: string | undefined): string {
 	}
 
 	if (assetPath.startsWith("/uploads/")) {
-		return `/api/image-preview/?path=${encodeURIComponent(assetPath)}`;
+		// 导航栏 logo/icon 最大约 40px，3x retina = 120px → 给 200 已经超清
+		return `/api/image-preview/?path=${encodeURIComponent(assetPath)}&w=200&format=webp&q=85`;
 	}
 
 	return url(assetPath);

@@ -32,8 +32,11 @@
 		}
 
 		if (imagePath.startsWith("/")) {
+			// 与 DeviceCard.astro 保持一致：设备图请求 600px WebP
 			return (
-				"/api/image-preview/?path=" + encodeURIComponent(imagePath)
+				"/api/image-preview/?path=" +
+				encodeURIComponent(imagePath) +
+				"&w=600&format=webp&q=85"
 			);
 		}
 

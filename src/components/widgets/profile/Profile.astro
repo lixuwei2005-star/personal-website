@@ -10,7 +10,8 @@ import { i18n } from "../../../i18n/translation";
 
 const initialAvatarSrc =
 	profileConfig.avatar?.startsWith("/uploads/")
-		? `/api/image-preview/?path=${encodeURIComponent(profileConfig.avatar)}`
+		? // 头像最大显示约 128px（侧边栏 widget），3x retina = 384px → 给 400 上限就够
+			`/api/image-preview/?path=${encodeURIComponent(profileConfig.avatar)}&w=400&format=webp&q=85`
 		: (profileConfig.avatar || "");
 ---
 
@@ -212,7 +213,7 @@ const initialAvatarSrc =
 				avatarPath.startsWith("data:")
 			) {
 				const avatarSrc = avatarPath.startsWith("/uploads/")
-					? `/api/image-preview/?path=${encodeURIComponent(avatarPath)}`
+					? `/api/image-preview/?path=${encodeURIComponent(avatarPath)}&w=400&format=webp&q=85`
 					: avatarPath;
 				document
 					.querySelectorAll("[data-profile-avatar-wrapper]")

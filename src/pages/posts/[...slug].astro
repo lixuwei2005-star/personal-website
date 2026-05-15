@@ -146,7 +146,8 @@ if (profileConfig.avatar) {
 			posterAvatarUrl = img.src;
 		}
 	} else if (profileConfig.avatar.startsWith("/uploads/")) {
-		posterAvatarUrl = `/api/image-preview/?path=${encodeURIComponent(profileConfig.avatar)}`;
+		// 文章页作者小头像约 40px，3x retina = 120px → 给 200 上限
+		posterAvatarUrl = `/api/image-preview/?path=${encodeURIComponent(profileConfig.avatar)}&w=200&format=webp&q=85`;
 	}
 }
 

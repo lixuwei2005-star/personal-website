@@ -23,7 +23,8 @@ function resolveDeviceImageSrc(imagePath: string) {
 	}
 
 	if (imagePath.startsWith("/")) {
-		return `/api/image-preview/?path=${encodeURIComponent(imagePath)}`;
+		// 设备卡片图最大显示约 200px，2x retina = 400px → 给 600 上限留余量
+		return `/api/image-preview/?path=${encodeURIComponent(imagePath)}&w=600&format=webp&q=85`;
 	}
 
 	return `/api/admin/upload-preview/?path=${encodeURIComponent(imagePath)}`;

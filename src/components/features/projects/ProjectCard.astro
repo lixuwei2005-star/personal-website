@@ -26,7 +26,8 @@ function resolveProjectImageSrc(imagePath: string) {
 	}
 
 	if (imagePath.startsWith("/")) {
-		return `/api/image-preview/?path=${encodeURIComponent(imagePath)}`;
+		// 项目卡片图最大显示约 400px，2x retina = 800px → 给 800 上限
+		return `/api/image-preview/?path=${encodeURIComponent(imagePath)}&w=800&format=webp&q=85`;
 	}
 
 	return `/api/admin/upload-preview/?path=${encodeURIComponent(imagePath)}`;

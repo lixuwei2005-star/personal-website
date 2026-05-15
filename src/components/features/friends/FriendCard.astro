@@ -48,7 +48,8 @@ function resolveFriendImageSrc(imagePath: string) {
 		return imagePath;
 	}
 
-	return `/api/image-preview/?path=${encodeURIComponent(imagePath)}`;
+	// 友链头像最大显示约 96px，3x retina = 288px → 给 300 上限就够清晰
+	return `/api/image-preview/?path=${encodeURIComponent(imagePath)}&w=300&format=webp&q=85`;
 }
 
 const friendImageSrc = resolveFriendImageSrc(friend.imgurl);

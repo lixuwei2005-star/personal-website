@@ -698,7 +698,9 @@ function resolveMusicCoverPath(coverPath: string): string {
 	}
 
 	if (coverPath.startsWith("/uploads/")) {
-		return `/api/image-preview/?path=${encodeURIComponent(coverPath)}`;
+		// 音乐封面在 UI 上最大也就 64px（w-16 拓展态），3x retina = 192px。
+		// 给个 200px 上限就足够清晰，比原图小一两个数量级。
+		return `/api/image-preview/?path=${encodeURIComponent(coverPath)}&w=200&format=webp&q=85`;
 	}
 
 	if (coverPath.startsWith("/")) {

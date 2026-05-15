@@ -121,6 +121,10 @@ class MusicPlayerStore {
 		}
 
 		this.audio = new Audio();
+		// 关键：告诉浏览器不要预加载音频数据。
+		// 这样在 loadSong 设置 src 后，浏览器不会立刻下载音频；
+		// 只有用户首次点击播放（调用 audio.play()）时才会发起请求。
+		this.audio.preload = "none";
 		this.setupAudioListeners();
 		this.loadVolumeFromStorage();
 		this.registerInteractionHandler();
@@ -362,7 +366,12 @@ class MusicPlayerStore {
 		}
 		if (song.url !== this.state.currentSong.url) {
 			this.state.currentSong = { ...song };
-			if (song.url) {
+			// 用 playlist 接口返回的 duration 占位，避免懒加载状态下进度条显示 0。
+			if (song.duration && song.duration > 0) {
+				this.state.duration = song.duration;
+			}
+			// 只在真正会触发下载时才显示加载中（autoPlay=true）。
+			if (song.url && autoPlay) {
 				this.state.isLoading = true;
 			} else {
 				this.state.isLoading = false;
@@ -374,7 +383,12 @@ class MusicPlayerStore {
 				this.audio.src = "";
 			}
 			this.audio.src = getAssetPath(song.url);
-			this.audio.load();
+			// 只有要立刻播放才主动 load()。
+			// autoPlay=false 时（如初始化加载第一首歌）只设 src，不下载音频字节。
+			// 用户点击播放时由 audio.play() 触发实际下载（配合 preload="none"）。
+			if (autoPlay) {
+				this.audio.load();
+			}
 		}
 		this.broadcastState();
 	}

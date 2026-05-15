@@ -38,8 +38,11 @@ const isLocal = !(
 	src.startsWith("data:")
 );
 const isPublic = src.startsWith("/");
+// uploads 下的图走 image-preview API：默认请求 1600px 宽度上限 + WebP 高质量。
+// Sharp 在服务端按需缩放转码，结果落盘缓存，肉眼几乎无损（q=85），但体积可降 5-10 倍。
+// 如需原图（如 admin 预览），调用方可改用 ?original=1。
 const resolvedPublicSrc = isPublic && src.startsWith("/uploads/")
-	? `/api/image-preview/?path=${encodeURIComponent(src)}`
+	? `/api/image-preview/?path=${encodeURIComponent(src)}&w=1600&format=webp&q=85`
 	: src;
 
 // TODO temporary workaround for images dynamic import

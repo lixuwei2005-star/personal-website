@@ -3,6 +3,9 @@ dist/
 
 # generated types
 .astro/
+
+# image-preview API 的优化结果磁盘缓存
+.cache/
 demo
 plans
 

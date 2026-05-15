@@ -59,13 +59,13 @@ export const siteOverrideConfig: Partial<SiteConfig> = {
 \t\tasciiFont: {
 \t\t\tfontFamily: ${JSON.stringify(settings.font.asciiFont.fontFamily)},
 \t\t\tfontWeight: ${JSON.stringify(settings.font.asciiFont.fontWeight)},
-\t\t\tlocalFonts: ${JSON.stringify([settings.font.asciiFont.selectedFile])},
+\t\t\tlocalFonts: ${JSON.stringify(settings.font.asciiFont.selectedFile ? [settings.font.asciiFont.selectedFile] : [])},
 \t\t\tenableCompress: ${settings.font.asciiFont.enableCompress ? "true" : "false"},
 \t\t},
 \t\tcjkFont: {
 \t\t\tfontFamily: ${JSON.stringify(settings.font.cjkFont.fontFamily)},
 \t\t\tfontWeight: ${JSON.stringify(settings.font.cjkFont.fontWeight)},
-\t\t\tlocalFonts: ${JSON.stringify([settings.font.cjkFont.selectedFile])},
+\t\t\tlocalFonts: ${JSON.stringify(settings.font.cjkFont.selectedFile ? [settings.font.cjkFont.selectedFile] : [])},
 \t\t\tenableCompress: ${settings.font.cjkFont.enableCompress ? "true" : "false"},
 \t\t},
 \t},

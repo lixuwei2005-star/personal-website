@@ -287,8 +287,10 @@ function normalizeFontFileSelection(
 	}
 
 	const trimmed = value.trim();
-	if (!trimmed) {
-		return fallbackFile;
+	// 空字符串是"系统默认"哨兵：表示不加载任何自定义字体，浏览器使用系统字体（PingFang/微软雅黑/SF Pro 等）。
+	// 显式区别于 undefined/null（fallback 到默认字体）。
+	if (trimmed === "" && typeof value === "string") {
+		return "";
 	}
 
 	return (
@@ -461,15 +463,19 @@ export function getSiteSettings(): SiteSettingsData {
 		font: {
 			asciiFont: {
 				selectedFile: asciiSelectedFile,
+				// selectedFile 为空 = 系统默认：fontFamily 也设为空，让 Layout.astro 跳过 @font-face
+				// 并且不把这个字体加进 body font-family 列表，浏览器直接用系统字体。
 				fontFamily:
-					typeof row?.font_ascii_family === "string" &&
-					row.font_ascii_family.trim()
-						? row.font_ascii_family.trim()
-						: resolveFontLabel(
-								asciiSelectedFile,
-								availableFonts,
-								DEFAULT_SITE_SETTINGS.font.asciiFont.fontFamily,
-							),
+					asciiSelectedFile === ""
+						? ""
+						: typeof row?.font_ascii_family === "string" &&
+							  row.font_ascii_family.trim()
+							? row.font_ascii_family.trim()
+							: resolveFontLabel(
+									asciiSelectedFile,
+									availableFonts,
+									DEFAULT_SITE_SETTINGS.font.asciiFont.fontFamily,
+								),
 				fontWeight: normalizeFontWeight(
 					row?.font_ascii_weight,
 					DEFAULT_SITE_SETTINGS.font.asciiFont.fontWeight,
@@ -481,15 +487,18 @@ export function getSiteSettings(): SiteSettingsData {
 			},
 			cjkFont: {
 				selectedFile: cjkSelectedFile,
+				// 同 asciiFont：selectedFile 为空 = 系统默认。
 				fontFamily:
-					typeof row?.font_cjk_family === "string" &&
-					row.font_cjk_family.trim()
-						? row.font_cjk_family.trim()
-						: resolveFontLabel(
-								cjkSelectedFile,
-								availableFonts,
-								DEFAULT_SITE_SETTINGS.font.cjkFont.fontFamily,
-							),
+					cjkSelectedFile === ""
+						? ""
+						: typeof row?.font_cjk_family === "string" &&
+							  row.font_cjk_family.trim()
+							? row.font_cjk_family.trim()
+							: resolveFontLabel(
+									cjkSelectedFile,
+									availableFonts,
+									DEFAULT_SITE_SETTINGS.font.cjkFont.fontFamily,
+								),
 				fontWeight: normalizeFontWeight(
 					row?.font_cjk_weight,
 					DEFAULT_SITE_SETTINGS.font.cjkFont.fontWeight,
@@ -643,48 +652,57 @@ export function updateSiteSettings(data: Partial<SiteSettingsData>): void {
 				current.navbarTitle.logo,
 			),
 		},
-		font: {
-			asciiFont: {
-				selectedFile: normalizeFontFileSelection(
-					data.font?.asciiFont?.selectedFile ?? current.font.asciiFont.selectedFile,
-					current.availableFonts,
-					current.font.asciiFont.selectedFile,
-				),
-				fontFamily:
-					typeof data.font?.asciiFont?.fontFamily === "string" &&
-					data.font.asciiFont.fontFamily.trim()
-						? data.font.asciiFont.fontFamily.trim()
-						: current.font.asciiFont.fontFamily,
-				fontWeight: normalizeFontWeight(
-					data.font?.asciiFont?.fontWeight,
-					current.font.asciiFont.fontWeight,
-				),
-				enableCompress:
-					typeof data.font?.asciiFont?.enableCompress === "boolean"
-						? data.font.asciiFont.enableCompress
-						: current.font.asciiFont.enableCompress,
-			},
-			cjkFont: {
-				selectedFile: normalizeFontFileSelection(
-					data.font?.cjkFont?.selectedFile ?? current.font.cjkFont.selectedFile,
-					current.availableFonts,
-					current.font.cjkFont.selectedFile,
-				),
-				fontFamily:
-					typeof data.font?.cjkFont?.fontFamily === "string" &&
-					data.font.cjkFont.fontFamily.trim()
-						? data.font.cjkFont.fontFamily.trim()
-						: current.font.cjkFont.fontFamily,
-				fontWeight: normalizeFontWeight(
-					data.font?.cjkFont?.fontWeight,
-					current.font.cjkFont.fontWeight,
-				),
-				enableCompress:
-					typeof data.font?.cjkFont?.enableCompress === "boolean"
-						? data.font.cjkFont.enableCompress
-						: current.font.cjkFont.enableCompress,
-			},
-		},
+		font: (() => {
+			const asciiSelectedFile = normalizeFontFileSelection(
+				data.font?.asciiFont?.selectedFile ?? current.font.asciiFont.selectedFile,
+				current.availableFonts,
+				current.font.asciiFont.selectedFile,
+			);
+			const cjkSelectedFile = normalizeFontFileSelection(
+				data.font?.cjkFont?.selectedFile ?? current.font.cjkFont.selectedFile,
+				current.availableFonts,
+				current.font.cjkFont.selectedFile,
+			);
+			return {
+				asciiFont: {
+					selectedFile: asciiSelectedFile,
+					// 系统默认（selectedFile 为空）时强制 fontFamily 为空，避免遗留旧字体名继续被引用。
+					fontFamily:
+						asciiSelectedFile === ""
+							? ""
+							: typeof data.font?.asciiFont?.fontFamily === "string" &&
+								  data.font.asciiFont.fontFamily.trim()
+								? data.font.asciiFont.fontFamily.trim()
+								: current.font.asciiFont.fontFamily,
+					fontWeight: normalizeFontWeight(
+						data.font?.asciiFont?.fontWeight,
+						current.font.asciiFont.fontWeight,
+					),
+					enableCompress:
+						typeof data.font?.asciiFont?.enableCompress === "boolean"
+							? data.font.asciiFont.enableCompress
+							: current.font.asciiFont.enableCompress,
+				},
+				cjkFont: {
+					selectedFile: cjkSelectedFile,
+					fontFamily:
+						cjkSelectedFile === ""
+							? ""
+							: typeof data.font?.cjkFont?.fontFamily === "string" &&
+								  data.font.cjkFont.fontFamily.trim()
+								? data.font.cjkFont.fontFamily.trim()
+								: current.font.cjkFont.fontFamily,
+					fontWeight: normalizeFontWeight(
+						data.font?.cjkFont?.fontWeight,
+						current.font.cjkFont.fontWeight,
+					),
+					enableCompress:
+						typeof data.font?.cjkFont?.enableCompress === "boolean"
+							? data.font.cjkFont.enableCompress
+							: current.font.cjkFont.enableCompress,
+				},
+			};
+		})(),
 		availableFonts: current.availableFonts,
 		showLastModified:
 			typeof data.showLastModified === "boolean"

@@ -603,13 +603,20 @@
 		);
 	}
 
+	// "系统默认" 哨兵：selectedFile 为空字符串 = 不加载任何自定义字体，
+	// 浏览器使用操作系统自带的字体（PingFang / Microsoft YaHei / SF Pro 等），0 字节下载。
+	const SYSTEM_DEFAULT_LABEL =
+		lang === "zh-CN"
+			? "系统默认（0 字节，最快）"
+			: "System Default (no font load, 0 bytes)";
+
 	function updateFontSelection(slot: FontSlotKey, nextFile: string) {
 		const currentSlot = font[slot];
-		const nextLabel = getFontOptionLabel(nextFile);
+		// nextFile 为空 = 选了"系统默认"：fontFamily 也清空，让 Layout.astro 跳过 @font-face。
 		const nextSlot = {
 			...currentSlot,
 			selectedFile: nextFile,
-			fontFamily: nextLabel,
+			fontFamily: nextFile === "" ? "" : getFontOptionLabel(nextFile),
 		};
 
 		font = {
@@ -1429,6 +1436,7 @@
 									(event.currentTarget as HTMLSelectElement).value,
 								)}
 						>
+							<option value="">{SYSTEM_DEFAULT_LABEL}</option>
 							{#each availableFonts as option}
 								<option value={option.fileName}>{option.label}</option>
 							{/each}
@@ -1490,6 +1498,7 @@
 									(event.currentTarget as HTMLSelectElement).value,
 								)}
 						>
+							<option value="">{SYSTEM_DEFAULT_LABEL}</option>
 							{#each availableFonts as option}
 								<option value={option.fileName}>{option.label}</option>
 							{/each}

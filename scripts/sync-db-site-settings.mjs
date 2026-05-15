@@ -957,40 +957,63 @@ writeSiteOverrideFile({
 				? row.navbar_title_logo.trim()
 				: DEFAULT_SITE_SETTINGS.navbarTitle.logo,
 	},
-	font: {
-		asciiFont: {
-			fontFamily:
-				typeof row.font_ascii_family === "string" && row.font_ascii_family.trim()
-					? row.font_ascii_family.trim()
-					: DEFAULT_SITE_SETTINGS.font.asciiFont.fontFamily,
-			fontWeight:
-				typeof row.font_ascii_weight === "string" && row.font_ascii_weight.trim()
-					? row.font_ascii_weight.trim()
-					: DEFAULT_SITE_SETTINGS.font.asciiFont.fontWeight,
-			localFonts: [
-				typeof row.font_ascii_file === "string" && row.font_ascii_file.trim()
-					? row.font_ascii_file.trim()
-					: DEFAULT_SITE_SETTINGS.font.asciiFont.localFonts[0],
-			],
-			enableCompress: row.font_ascii_enable_compress === 1,
-		},
-		cjkFont: {
-			fontFamily:
-				typeof row.font_cjk_family === "string" && row.font_cjk_family.trim()
-					? row.font_cjk_family.trim()
-					: DEFAULT_SITE_SETTINGS.font.cjkFont.fontFamily,
-			fontWeight:
-				typeof row.font_cjk_weight === "string" && row.font_cjk_weight.trim()
-					? row.font_cjk_weight.trim()
-					: DEFAULT_SITE_SETTINGS.font.cjkFont.fontWeight,
-			localFonts: [
-				typeof row.font_cjk_file === "string" && row.font_cjk_file.trim()
-					? row.font_cjk_file.trim()
-					: DEFAULT_SITE_SETTINGS.font.cjkFont.localFonts[0],
-			],
-			enableCompress: row.font_cjk_enable_compress === 1,
-		},
-	},
+	font: (() => {
+		// 空字符串（"" 或全空格）= 用户在后台选了"系统默认（不加载字体）"。
+		// 此时输出 fontFamily="" + localFonts=[]，让 Layout.astro 跳过 @font-face，
+		// 浏览器使用系统字体（PingFang/微软雅黑/SF Pro 等），0 字节下载。
+		const asciiFile =
+			typeof row.font_ascii_file === "string" ? row.font_ascii_file : null;
+		const asciiIsSystemDefault =
+			asciiFile !== null && asciiFile.trim() === "";
+		const cjkFile =
+			typeof row.font_cjk_file === "string" ? row.font_cjk_file : null;
+		const cjkIsSystemDefault = cjkFile !== null && cjkFile.trim() === "";
+
+		return {
+			asciiFont: {
+				fontFamily: asciiIsSystemDefault
+					? ""
+					: typeof row.font_ascii_family === "string" &&
+						  row.font_ascii_family.trim()
+						? row.font_ascii_family.trim()
+						: DEFAULT_SITE_SETTINGS.font.asciiFont.fontFamily,
+				fontWeight:
+					typeof row.font_ascii_weight === "string" &&
+					row.font_ascii_weight.trim()
+						? row.font_ascii_weight.trim()
+						: DEFAULT_SITE_SETTINGS.font.asciiFont.fontWeight,
+				localFonts: asciiIsSystemDefault
+					? []
+					: [
+							asciiFile && asciiFile.trim()
+								? asciiFile.trim()
+								: DEFAULT_SITE_SETTINGS.font.asciiFont.localFonts[0],
+						],
+				enableCompress: row.font_ascii_enable_compress === 1,
+			},
+			cjkFont: {
+				fontFamily: cjkIsSystemDefault
+					? ""
+					: typeof row.font_cjk_family === "string" &&
+						  row.font_cjk_family.trim()
+						? row.font_cjk_family.trim()
+						: DEFAULT_SITE_SETTINGS.font.cjkFont.fontFamily,
+				fontWeight:
+					typeof row.font_cjk_weight === "string" &&
+					row.font_cjk_weight.trim()
+						? row.font_cjk_weight.trim()
+						: DEFAULT_SITE_SETTINGS.font.cjkFont.fontWeight,
+				localFonts: cjkIsSystemDefault
+					? []
+					: [
+							cjkFile && cjkFile.trim()
+								? cjkFile.trim()
+								: DEFAULT_SITE_SETTINGS.font.cjkFont.localFonts[0],
+						],
+				enableCompress: row.font_cjk_enable_compress === 1,
+			},
+		};
+	})(),
 	music: parseMusicSettingsJson(row.music_settings_json),
 	showLastModified: row.show_last_modified === 1,
 });

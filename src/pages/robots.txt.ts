@@ -7,6 +7,7 @@ Allow: /$
 Allow: /posts/
 Allow: /about/
 Allow: /about-site/
+Allow: /sitemap.xml
 
 Sitemap: ${new URL("sitemap.xml", import.meta.env.SITE).href}
 `.trim();

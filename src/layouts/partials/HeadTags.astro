@@ -44,6 +44,45 @@ const keywords = siteConfig.keywords;
 // Favicons
 const favicons: Favicon[] =
 	siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
+
+// Canonical URL：剥离 query 和 hash，避免参数化 URL 被判重
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? siteConfig.siteURL).href;
+
+// 文章页有自己的 BlogPosting JSON-LD（见 src/pages/posts/[...slug].astro），
+// 其它页面注入站点级 WebSite + Person 结构化数据
+const siteAuthorUrl = (Astro.site ?? new URL(siteConfig.siteURL)).href;
+const websiteJsonLd = !setOGTypeArticle
+	? {
+			"@context": "https://schema.org",
+			"@graph": [
+				{
+					"@type": "WebSite",
+					"@id": `${siteAuthorUrl}#website`,
+					url: siteAuthorUrl,
+					name: siteConfig.title,
+					description: siteConfig.subtitle || siteConfig.title,
+					inLanguage: siteConfig.lang.replace("_", "-"),
+					publisher: { "@id": `${siteAuthorUrl}#person` },
+				},
+				{
+					"@type": "Person",
+					"@id": `${siteAuthorUrl}#person`,
+					name: profileConfig.name,
+					url: siteAuthorUrl,
+					...((() => {
+						const urls = (profileConfig.links ?? [])
+							.map((l) => l.url)
+							.filter(
+								(u): u is string =>
+									!!u && /^https?:\/\//i.test(u),
+							);
+						return urls.length > 0 ? { sameAs: urls } : {};
+					})()),
+					...(ogImageUrl ? { image: ogImageUrl } : {}),
+				},
+			],
+		}
+	: null;
 ---
 
 <!-- SEO Meta Tags -->
@@ -55,6 +94,17 @@ const favicons: Favicon[] =
 	)
 }
 <meta name="author" content={profileConfig.name} />
+<link rel="canonical" href={canonicalUrl} />
+
+{
+	websiteJsonLd && (
+		<script
+			is:inline
+			type="application/ld+json"
+			set:html={JSON.stringify(websiteJsonLd)}
+		/>
+	)
+}
 
 <!-- Open Graph Tags -->
 <meta property="og:site_name" content={siteConfig.title} />

@@ -132,7 +132,18 @@ export default defineConfig({
 		svelte({
 			preprocess: vitePreprocess(),
 		}),
-		sitemap(),
+		sitemap({
+			// 与 robots.txt 一致：只索引首页、文章页、about、about-site
+			filter: (page) => {
+				const pathname = new URL(page).pathname;
+				return (
+					pathname === "/" ||
+					pathname.startsWith("/posts/") ||
+					pathname === "/about/" ||
+					pathname === "/about-site/"
+				);
+			},
+		}),
 		mdx(),
 	],
 	markdown: {

@@ -154,22 +154,43 @@ if (profileConfig.avatar) {
 // 判断是否为加密文章
 const isEncrypted = !!(entry.data.encrypted && entry.data.password);
 
+// og:image is an absolute URL; cover image is article-local — fall back from the
+// already-resolved og candidate when no cover frontmatter is set.
+const canonicalArticleUrl = new URL(Astro.url.pathname, Astro.site ?? siteConfig.siteURL).href;
+let jsonLdImage: string | undefined;
+if (ogImageRaw) {
+	jsonLdImage = /^https?:\/\//i.test(ogImageRaw)
+		? ogImageRaw
+		: new URL(ogImageRaw, Astro.site ?? siteConfig.siteURL).href;
+}
+
 const jsonLd = {
 	"@context": "https://schema.org",
 	"@type": "BlogPosting",
+	"@id": `${canonicalArticleUrl}#article`,
+	mainEntityOfPage: { "@type": "WebPage", "@id": canonicalArticleUrl },
+	url: canonicalArticleUrl,
 	headline: entry.data.title,
 	description: entry.data.description || entry.data.title,
 	keywords: entry.data.tags,
+	...(jsonLdImage ? { image: jsonLdImage } : {}),
 	author: {
 		"@type": "Person",
 		name: profileConfig.name,
-		url: Astro.site,
+		url: (Astro.site ?? new URL(siteConfig.siteURL)).href,
+	},
+	publisher: {
+		"@type": "Organization",
+		name: siteConfig.title,
+		url: (Astro.site ?? new URL(siteConfig.siteURL)).href,
 	},
 	datePublished: formatDateToYYYYMMDD(entry.data.published),
+	dateModified: formatDateToYYYYMMDD(
+		entry.data.updated || entry.data.published,
+	),
 	inLanguage: entry.data.lang
 		? entry.data.lang.replace("_", "-")
 		: siteConfig.lang.replace("_", "-"),
-	// TODO include cover image here
 };
 ---
 

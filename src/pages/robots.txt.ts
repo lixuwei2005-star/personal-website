@@ -5,6 +5,8 @@ User-agent: *
 Disallow: /
 Allow: /$
 Allow: /posts/
+Allow: /about/
+Allow: /about-site/
 
 Sitemap: ${new URL("sitemap-index.xml", import.meta.env.SITE).href}
 `.trim();

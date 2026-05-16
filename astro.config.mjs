@@ -1,5 +1,4 @@
 import node from "@astrojs/node";
-import sitemap from "@astrojs/sitemap";
 import mdx from '@astrojs/mdx';
 import svelte, { vitePreprocess } from "@astrojs/svelte";
 import { pluginCollapsibleSections } from "@expressive-code/plugin-collapsible-sections";
@@ -132,18 +131,9 @@ export default defineConfig({
 		svelte({
 			preprocess: vitePreprocess(),
 		}),
-		sitemap({
-			// 与 robots.txt 一致：只索引首页、文章页、about、about-site
-			filter: (page) => {
-				const pathname = new URL(page).pathname;
-				return (
-					pathname === "/" ||
-					pathname.startsWith("/posts/") ||
-					pathname === "/about/" ||
-					pathname === "/about-site/"
-				);
-			},
-		}),
+		// Sitemap 改为运行时端点（见 src/pages/sitemap.xml.ts）。
+		// 原因：@astrojs/sitemap 无法枚举 `prerender = false` 的动态路由
+		// （首页 [...page]、文章页 [...slug]），自动产物里只有 about 系列。
 		mdx(),
 	],
 	markdown: {

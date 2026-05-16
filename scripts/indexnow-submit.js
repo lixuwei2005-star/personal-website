@@ -1,31 +1,23 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { loadEnv } from "./load-env.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 loadEnv();
 
-// 从 sitemap 文件中解析 URL 列表
-function parseSitemap(sitemapPath) {
-	const sitemapContent = fs.readFileSync(sitemapPath, "utf-8");
-
-	// 使用正则表达式提取 URL
-	const urlMatches = sitemapContent.match(/<loc>(.*?)<\/loc>/g);
-
+// 从线上 sitemap 端点抓取 URL 列表
+async function fetchSitemap(sitemapUrl) {
+	const response = await fetch(sitemapUrl);
+	if (!response.ok) {
+		throw new Error(
+			`Failed to fetch sitemap (${response.status}): ${sitemapUrl}`,
+		);
+	}
+	const xml = await response.text();
+	const urlMatches = xml.match(/<loc>(.*?)<\/loc>/g);
 	if (!urlMatches) {
 		console.error("❌ No URLs found in sitemap");
 		return [];
 	}
-
-	const urls = urlMatches.map((match) => {
-		const url = match.replace(/<loc>|<\/loc>/g, "").trim();
-		return url;
-	});
-
-	console.log(`✓ Parsed ${urls.length} URLs from sitemap`);
+	const urls = urlMatches.map((m) => m.replace(/<loc>|<\/loc>/g, "").trim());
+	console.log(`✓ Parsed ${urls.length} URLs from ${sitemapUrl}`);
 	return urls;
 }
 
@@ -131,32 +123,25 @@ async function submitToIndexNow(urls) {
 async function main() {
 	console.log("🚀 Starting Bing IndexNow URL submission task...\n");
 
-	// 构建输出目录路径
-	const distDir = path.join(__dirname, "../dist");
-	const sitemapPath = path.join(distDir, "sitemap-0.xml");
-
-	if (!fs.existsSync(sitemapPath)) {
-		console.error(`❌ Sitemap file not found: ${sitemapPath}`);
-		console.error(
-			"   Please ensure the project is built before running this script",
-		);
+	const host = process.env.INDEXNOW_HOST;
+	if (!host) {
+		console.error("❌ Missing required env var: INDEXNOW_HOST");
 		process.exit(1);
 	}
+	const sitemapUrl = `https://${host}/sitemap.xml`;
 
 	try {
-		// 解析 sitemap 获取 URL 列表
-		const urls = parseSitemap(sitemapPath);
+		const urls = await fetchSitemap(sitemapUrl);
 
 		if (urls.length === 0) {
 			console.log("⚠ No URLs found in sitemap, skipping submission");
 			return;
 		}
 
-		// 过滤出有效的 URL（以指定主机开头的）
-		const host = process.env.INDEXNOW_HOST;
 		const filteredUrls = urls.filter(
 			(url) =>
-				url.startsWith(`https://${host}/`) || url.startsWith(`http://${host}/`),
+				url.startsWith(`https://${host}/`) ||
+				url.startsWith(`http://${host}/`),
 		);
 
 		console.log(`✓ Filtered to ${filteredUrls.length} valid URLs`);
@@ -166,7 +151,6 @@ async function main() {
 			return;
 		}
 
-		// 提交 URL 到 IndexNow
 		await submitToIndexNow(filteredUrls);
 
 		console.log("\n🎉 Bing IndexNow URL submission task completed!");

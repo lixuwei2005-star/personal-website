@@ -44,7 +44,30 @@ const getImageSources = async () => {
 	return { desktop: allImages, mobile: allImages };
 };
 
-const imageSources = await getImageSources();
+// 全屏壁纸放在 z-index:-1 全屏铺底，最大显示等于视口，1920px 已经够 1080p+retina 用。
+// /uploads/* 路径绕去 image-preview API：服务端按需 Sharp 缩放 + WebP 转码，落盘缓存。
+// 原图 1.5 MB PNG → ~200-400 KB WebP，肉眼无差别。
+// http(s)/data: 等外链原样返回。
+function resolveWallpaperSrc(src: string): string {
+	if (!src) return src;
+	if (
+		src.startsWith("http://") ||
+		src.startsWith("https://") ||
+		src.startsWith("data:")
+	) {
+		return src;
+	}
+	if (src.startsWith("/uploads/")) {
+		return `/api/image-preview/?path=${encodeURIComponent(src)}&w=1920&format=webp&q=85`;
+	}
+	return src;
+}
+
+const rawImageSources = await getImageSources();
+const imageSources = {
+	desktop: rawImageSources.desktop.map(resolveWallpaperSrc),
+	mobile: rawImageSources.mobile.map(resolveWallpaperSrc),
+};
 const hasDesktopImages = imageSources.desktop.length > 0;
 const hasMobileImages = imageSources.mobile.length > 0;
 

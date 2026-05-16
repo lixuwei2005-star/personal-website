@@ -29,6 +29,10 @@ interface Props {
 
 	// 水波纹效果
 	showWave?: boolean;
+
+	// 默认壁纸模式：不是 "banner" 时，banner 图全部延迟加载，
+	// 等用户切回 banner 模式才真正下载（节流首屏带宽）。
+	defaultWallpaperMode?: string;
 }
 
 const {
@@ -39,7 +43,13 @@ const {
 	overlaySubtitle = siteConfig.banner.homeText?.subtitle,
 	typewriter = siteConfig.banner.homeText?.typewriter?.enable ?? false,
 	showWave = siteConfig.banner.waves?.enable ?? true,
+	defaultWallpaperMode = siteConfig.wallpaperMode?.defaultMode || "banner",
 } = Astro.props;
+
+// 默认壁纸模式不是 banner 时，把"原本立刻加载的第一张图"也放进 <template>，
+// 整个 banner 不会有任何 <img src=...> 在 DOM 里，浏览器 0 字节下载。
+// 用户在 WallpaperSwitch 上切到 banner 模式时，activator 脚本把 template 内容塞进 slot 触发加载。
+const shouldDeferBannerImages = defaultWallpaperMode !== "banner";
 
 // 标准化图片数组
 const normalizeToArray = (images: string | string[]): string[] =>
@@ -83,20 +93,38 @@ const hasBannerLink = !!siteConfig.banner.credit.url;
 			data-carousel-interval={carouselIntervalMs}
 			data-fade-ms={fadeMs}
 		>
-			{/* 移动端：第一张图直接渲染，其余放入 template 延迟加载 */}
+			{/* 移动端：第一张图。banner 模式时直接渲染，其他模式时放进 template 等切换激活 */}
 			{mobileImages.length > 0 && (
-				<div class="banner-image-slot-mobile absolute inset-0 block md:hidden">
-					<Image
-						alt="Mobile banner image 1"
-						class="object-cover h-full w-full"
-						src={mobileImages[0]}
-						position={siteConfig.banner.position}
-						widths={[640, 1024, 1536]}
-						sizes="100vw"
-						loading="eager"
-						fetchpriority="high"
-					/>
-				</div>
+				shouldDeferBannerImages ? (
+					<>
+						<div class="banner-image-slot-mobile absolute inset-0 block md:hidden"></div>
+						<template class="banner-defer-first-mobile">
+							<Image
+								alt="Mobile banner image 1"
+								class="object-cover h-full w-full"
+								src={mobileImages[0]}
+								position={siteConfig.banner.position}
+								widths={[640, 1024, 1536]}
+								sizes="100vw"
+								loading="eager"
+								fetchpriority="high"
+							/>
+						</template>
+					</>
+				) : (
+					<div class="banner-image-slot-mobile absolute inset-0 block md:hidden">
+						<Image
+							alt="Mobile banner image 1"
+							class="object-cover h-full w-full"
+							src={mobileImages[0]}
+							position={siteConfig.banner.position}
+							widths={[640, 1024, 1536]}
+							sizes="100vw"
+							loading="eager"
+							fetchpriority="high"
+						/>
+					</div>
+				)
 			)}
 			{mobileImages.slice(1).map((src, i) => (
 				<template class="banner-tpl-mobile">
@@ -113,21 +141,40 @@ const hasBannerLink = !!siteConfig.banner.credit.url;
 				</template>
 			))}
 
-			{/* 桌面端：第一张图直接渲染，其余放入 template 延迟加载 */}
+			{/* 桌面端：第一张图。banner 模式时直接渲染，其他模式时放进 template */}
 			{desktopImages.length > 0 && (
-				<div class="banner-image-slot-desktop absolute inset-0 hidden md:block">
-					<Image
-						id="banner"
-						alt="Desktop banner image 1"
-						class="object-cover h-full w-full"
-						src={desktopImages[0]}
-						position={siteConfig.banner.position}
-						widths={[1024, 1536, 2048, 2560]}
-						sizes="100vw"
-						loading="eager"
-						fetchpriority="high"
-					/>
-				</div>
+				shouldDeferBannerImages ? (
+					<>
+						<div class="banner-image-slot-desktop absolute inset-0 hidden md:block"></div>
+						<template class="banner-defer-first-desktop">
+							<Image
+								id="banner"
+								alt="Desktop banner image 1"
+								class="object-cover h-full w-full"
+								src={desktopImages[0]}
+								position={siteConfig.banner.position}
+								widths={[1024, 1536, 2048, 2560]}
+								sizes="100vw"
+								loading="eager"
+								fetchpriority="high"
+							/>
+						</template>
+					</>
+				) : (
+					<div class="banner-image-slot-desktop absolute inset-0 hidden md:block">
+						<Image
+							id="banner"
+							alt="Desktop banner image 1"
+							class="object-cover h-full w-full"
+							src={desktopImages[0]}
+							position={siteConfig.banner.position}
+							widths={[1024, 1536, 2048, 2560]}
+							sizes="100vw"
+							loading="eager"
+							fetchpriority="high"
+						/>
+					</div>
+				)
 			)}
 			{desktopImages.slice(1).map((src, i) => (
 				<template class="banner-tpl-desktop">
@@ -153,9 +200,12 @@ const hasBannerLink = !!siteConfig.banner.credit.url;
 					desktopImages: bannerImages.desktop,
 					mobileImages: bannerImages.mobile,
 					position: siteConfig.banner.position,
+					shouldDeferBannerImages,
 				}}
 			>
-				(function () {
+				// 把单图模式的图片注入逻辑封装成全局函数。
+				// banner 模式下页面解析完立即调用；其他模式下等 activator 触发。
+				window.__bannerInitSingle = function initBannerSingle() {
 					const getRandomImage = (images, storageKey) => {
 						if (Array.isArray(images)) {
 							if (images.length === 0) {return null;}
@@ -208,7 +258,12 @@ const hasBannerLink = !!siteConfig.banner.credit.url;
 						desktopImg.dataset.position = position;
 						container.appendChild(desktopImg);
 					}
-				})();
+				};
+
+				// banner 模式默认立刻执行；其他模式等 activator 调用。
+				if (!shouldDeferBannerImages) {
+					window.__bannerInitSingle();
+				}
 			</script>
 		</div>
 	)}
@@ -228,8 +283,9 @@ const hasBannerLink = !!siteConfig.banner.credit.url;
 
 	<!-- 轮播脚本：随机起始 + 帧收集 + Ken Burns + Crossfade + 触摸/鼠标事件 -->
 	{isCarouselEnabled && (
-		<script is:inline data-swup-ignore-script>
-			(function initBannerCarousel() {
+		<script is:inline data-swup-ignore-script define:vars={{ shouldDeferBannerImages }}>
+			// 封装成全局函数。banner 模式立即跑；其他模式由 activator 触发。
+			window.__bannerInitCarousel = function initBannerCarousel() {
 				var container = document.getElementById('banner-carousel');
 				if (!container) return;
 
@@ -589,7 +645,12 @@ const hasBannerLink = !!siteConfig.banner.credit.url;
 					container.removeEventListener('mouseleave', onMouseLeave);
 					isCrossfading = { mobile: false, desktop: false };
 				};
-			})();
+			};
+
+			// banner 模式默认立刻跑；其他模式等 activator 调用。
+			if (!shouldDeferBannerImages) {
+				window.__bannerInitCarousel();
+			}
 		</script>
 	)}
 
@@ -711,6 +772,72 @@ const hasBannerLink = !!siteConfig.banner.credit.url;
 			</Icon>
 		</a>
 	)}
+
+	<!--
+	  Banner 激活器：默认壁纸模式不是 banner 时，banner 图全在 <template> 里没有真正加载。
+	  这段脚本负责：
+	    1. 页面加载时检查 localStorage 的 wallpaperMode；如果是 banner，立即激活。
+	    2. 监听 wallpaper-mode-change 事件，用户在 WallpaperSwitch 切到 banner 时激活。
+	  激活 = 把"第一张图"的 template 内容塞进 slot（触发图片加载）+ 调用对应的 init 函数。
+	-->
+	<script is:inline data-swup-ignore-script>
+		(function () {
+			if (window.__bannerActivatorBound) return;
+			window.__bannerActivatorBound = true;
+
+			function activateBanner() {
+				// 防止重复激活（多次切换 / Swup 导航回首页）
+				if (window.__bannerActivated) {
+					// 已激活：单图模式可能因为容器换页清空，重新跑一次 init 即可
+					if (typeof window.__bannerInitSingle === "function") {
+						window.__bannerInitSingle();
+					}
+					if (typeof window.__bannerInitCarousel === "function") {
+						window.__bannerInitCarousel();
+					}
+					return;
+				}
+
+				// 把"第一张图"的 template 内容注入 slot 触发加载
+				["mobile", "desktop"].forEach(function (type) {
+					var slot = document.querySelector(
+						".banner-image-slot-" + type,
+					);
+					var tpl = document.querySelector(
+						".banner-defer-first-" + type,
+					);
+					if (slot && tpl && !slot.querySelector("img")) {
+						slot.appendChild(tpl.content.cloneNode(true));
+					}
+				});
+
+				// 启动 carousel 或单图脚本
+				if (typeof window.__bannerInitCarousel === "function") {
+					window.__bannerInitCarousel();
+				}
+				if (typeof window.__bannerInitSingle === "function") {
+					window.__bannerInitSingle();
+				}
+
+				window.__bannerActivated = true;
+			}
+
+			// 1) 页面加载：如果用户上次或当前模式就是 banner，立即激活
+			try {
+				var stored = localStorage.getItem("wallpaperMode");
+				if (stored === "banner") {
+					activateBanner();
+				}
+			} catch (e) {}
+
+			// 2) 监听壁纸模式切换事件
+			window.addEventListener("wallpaper-mode-change", function (e) {
+				if (e && e.detail && e.detail.mode === "banner") {
+					activateBanner();
+				}
+			});
+		})();
+	</script>
 </div>
 
 <style>

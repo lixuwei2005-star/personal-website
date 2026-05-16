@@ -23,6 +23,7 @@ import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-cop
 import { pluginLanguageBadge } from "./src/plugins/expressive-code/language-badge.ts";
 import { AdmonitionComponent } from "./src/plugins/rehype-component-admonition.mjs";
 import { GithubCardComponent } from "./src/plugins/rehype-component-github-card.mjs";
+import { rehypeImageOptimize } from "./src/plugins/rehype-image-optimize.mjs";
 import { rehypeImageWidth } from "./src/plugins/rehype-image-width.mjs";
 import { rehypeVideoEmbed } from "./src/plugins/rehype-video-embed.mjs";
 import { rehypeMermaid } from "./src/plugins/rehype-mermaid.mjs";
@@ -191,6 +192,10 @@ export default defineConfig({
 				},
 			],
 			rehypeVideoEmbed,
+			// 视频已经被 rehype-video-embed 转成 <video> 了，剩下的 <img> 才需要走 Sharp 优化。
+			// 必须放在 rehype-video-embed 之后，rehype-image-width 之前
+			// （image-width 只改样式不动 src，顺序无所谓但放它前面更直觉）。
+			rehypeImageOptimize,
 			rehypeImageWidth,
 		],
 	},

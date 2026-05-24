@@ -7,6 +7,7 @@ import { Icon } from "astro-icon/components";
 
 import I18nKey from "../../../i18n/i18nKey";
 import { i18n } from "../../../i18n/translation";
+import { toImagePreviewUrl } from "../../../lib/image-preview";
 import type { AlbumGroup, Photo } from "../../../types/album";
 import { readAlbumById } from "../../../utils/album-scanner";
 
@@ -21,6 +22,7 @@ const layoutClass =
 	album?.layout === "masonry" ? "gallery-masonry" : "gallery-grid";
 const layoutColumns =
 	album?.columns === 2 || album?.columns === 4 ? album.columns : 3;
+const bannerCover = toImagePreviewUrl(album?.cover, { w: 1800, q: 85 });
 
 if (!album) {
 	return Astro.redirect("/404.html");
@@ -46,7 +48,7 @@ if (!album) {
 			album.cover ? (
 				<div class="relative w-full aspect-[3/1] min-h-[200px] max-h-[360px]">
 					<img
-						src={album.cover}
+						src={bannerCover}
 						alt={album.title}
 						class="w-full h-full object-cover"
 					/>

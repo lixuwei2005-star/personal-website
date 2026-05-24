@@ -1,19 +1,23 @@
 ---
+import { toImagePreviewUrl } from "../../../lib/image-preview";
 import type { PhotoCardProps } from "./types";
 
 const { src, alt = "", albumId, layout = "masonry" } =
 	Astro.props as PhotoCardProps;
+
+const thumbnailSrc = toImagePreviewUrl(src, { w: 1200, q: 82 });
+const fullSrc = toImagePreviewUrl(src, { w: 2400, q: 90 });
 ---
 
 <div class="gallery-photo-card break-inside-avoid mb-3">
 	<div
 		data-fancybox={`gallery-${albumId}`}
-		data-src={src}
+		data-src={fullSrc}
 		data-type="image"
 		class="block rounded-xl overflow-hidden group cursor-pointer"
 	>
 		<img
-			src={src}
+			src={thumbnailSrc}
 			alt={alt}
 			loading="lazy"
 			decoding="async"

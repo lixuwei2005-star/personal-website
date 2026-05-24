@@ -156,8 +156,8 @@ function ensureUniqueAlbumId(baseId: string, currentId?: string): string {
 	let suffix = 2;
 
 	while (true) {
-		const albumDir = getAlbumDirectory(candidate);
-		if (!fs.existsSync(albumDir) || candidate === currentId) {
+		const infoPath = path.join(getAlbumDirectory(candidate), "info.json");
+		if (!fs.existsSync(infoPath) || candidate === currentId) {
 			return candidate;
 		}
 		candidate = `${normalizedBase}-${suffix}`;

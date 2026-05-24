@@ -1,10 +1,12 @@
 ---
 export const prerender = false;
 
+import { ShareCard } from "@components/features/posts";
 import { PhotoCard } from "@components/features/albums";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { Icon } from "astro-icon/components";
 
+import { profileConfig, shareConfig, siteConfig } from "../../../config";
 import I18nKey from "../../../i18n/i18nKey";
 import { i18n } from "../../../i18n/translation";
 import { toImagePreviewUrl } from "../../../lib/image-preview";
@@ -27,11 +29,30 @@ const bannerCover = toImagePreviewUrl(album?.cover, { w: 1800, q: 85 });
 if (!album) {
 	return Astro.redirect("/404.html");
 }
+
+// 海报封面：本地路径走 image-preview 压成 1200px webp，外链直接用原图
+const posterCoverUrl = album.cover
+	? album.cover.startsWith("http")
+		? album.cover
+		: toImagePreviewUrl(album.cover, { w: 1200, q: 85 })
+	: undefined;
+
+// 海报头像：和文章页一致，本地路径走 image-preview，远程链接保留原样
+const posterAvatarUrl =
+	profileConfig.avatar && profileConfig.avatar.startsWith("/uploads/")
+		? `/api/image-preview/?path=${encodeURIComponent(profileConfig.avatar)}&w=200&format=webp&q=85`
+		: profileConfig.avatar;
+
+const albumShareUrl = new URL(
+	Astro.url.pathname,
+	siteConfig.siteURL,
+).toString();
 ---
 
 <MainGridLayout
 	title={album.title}
 	description={album.description || album.title}
+	ogImage={album.cover}
 >
 	<script>
 		import("../../../scripts/right-sidebar-layout.js");
@@ -187,4 +208,20 @@ if (!album) {
 			}
 		</div>
 	</div>
+
+	{
+		shareConfig.enable && (
+			<div class="mt-4">
+				<ShareCard
+					title={album.title}
+					description={album.description}
+					pubDate={album.date}
+					coverImage={posterCoverUrl}
+					url={albumShareUrl}
+					siteTitle={siteConfig.title}
+					avatar={posterAvatarUrl}
+				/>
+			</div>
+		)
+	}
 </MainGridLayout>
